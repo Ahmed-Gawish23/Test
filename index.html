@@ -1,61 +1,155 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A.G Sales Filter</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- إضافة مكتبة jQuery UI الخاصة بالبحث داخل القائمة -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            direction: rtl;
+            text-align: right;
+        }
+        h1 {
+            background-color: #f1c40f;
+            padding: 10px;
+        }
+        p {
+            background-color: #2ecc71;
+            padding: 10px;
+        }
+        footer {
+            background-color: #e74c3c;
+            padding: 10px;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        input {
+            padding: 8px;
+            margin: 10px 0;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>A.G Sales Filter</h1>
-        <p>Upload your Excel file, select your territory and product name, and view your sales data.</p>
-    </header>
 
-    <div class="container mt-4">
-        <div class="mb-3">
-            <label for="fileInput" class="form-label">Upload Excel File:</label>
-            <input type="file" class="form-control" id="fileInput" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
-        </div>
-        <div id="filterSection" class="d-none">
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label for="territorySearch" class="form-label">Select Territory:</label>
-                    <input type="text" id="territorySearch" class="form-control mb-2" placeholder="Search Territory">
-                    <div id="territoryCheckboxes" class="checkbox-container"></div>
-                </div>
-                <div class="col-md-6">
-                    <label for="productSearch" class="form-label">Select Product:</label>
-                    <input type="text" id="productSearch" class="form-control mb-2" placeholder="Search Product">
-                    <div id="productCheckboxes" class="checkbox-container"></div>
-                </div>
-            </div>
-            <button id="filterButton" class="btn btn-primary">Filter</button>
-        </div>
-        <div id="outputSection" class="mt-4 d-none">
-            <h3>Filtered Data:</h3>
-            <table class="table table-bordered bordered-table">
-                <thead>
-                    <tr>
-                        <th>Territory</th>
-                        <th>Product</th>
-                        <th>Total Sales</th>
-                    </tr>
-                </thead>
-                <tbody id="outputTable"></tbody>
-            </table>
-        </div>
-    </div>
+    <h1>A.G Sales Filter</h1>
+    <p>Upload your Excel file, select your territory and product name, and view your sales data.</p>
 
-    <footer>
-        Designed by Ahmed Gawish
-    </footer>
+    <input type="file" id="file-upload" accept=".xlsx, .xls" onchange="handleExcelFile(event)">
+    <input type="text" id="search" placeholder="Search" oninput="searchData()">
 
-    <script src="script.js"></script>
+    <table>
+        <thead>
+            <tr>
+                <th>Region</th>
+                <th>Product</th>
+                <th>Quantity</th>
+            </tr>
+        </thead>
+        <tbody id="sales-data"></tbody>
+    </table>
+
+    <footer>Designed by Ahmed Gawish</footer>
+
+    <!-- SheetJS Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.3/xlsx.full.min.js"></script>
+    <script>
+        let originalData = [];
+        let distributor = 'PharmaOverseas'; // Change to selected distributor (Ibnsina, ABOU_KIR)
+
+        const distributorColumns = {
+            PharmaOverseas: {
+                region: "Territory Name",
+                product: "Product Name",
+                quantity: "Sales"
+            },
+            Ibnsina: {
+                region: "Territory Name",
+                product: "Item Name",
+                quantity: "QTY"
+            },
+            ABOU_KIR: {
+                region: "ZONE_NAME",
+                product: "PRODUCT_NAME",
+                quantity: "NET_QUANTITY"
+            }
+        };
+
+        function handleExcelFile(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = e.target.result;
+                const workbook = XLSX.read(data, { type: 'binary' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+                let startRow = 0;
+                for (let i = 0; i < rows.length; i++) {
+                    if (rows[i].includes('Territory Name') || rows[i].includes('Product Name')) {
+                        startRow = i + 1;
+                        break;
+                    }
+                }
+
+                const dataFromSheet = XLSX.utils.sheet_to_json(sheet, { header: 1, range: startRow });
+                originalData = dataFromSheet.map(row => ({
+                    region: row[distributorColumns[distributor].region],
+                    product: row[distributorColumns[distributor].product],
+                    quantity: row[distributorColumns[distributor].quantity]
+                }));
+                displayData(originalData);
+            };
+            reader.readAsBinaryString(file);
+        }
+
+        function displayData(data) {
+            const tableBody = document.getElementById('sales-data');
+            tableBody.innerHTML = ''; // Clear previous data
+            const groupedData = groupData(data);
+
+            groupedData.forEach(item => {
+                const row = `<tr>
+                    <td>${item.region}</td>
+                    <td>${item.product}</td>
+                    <td>${item.totalQuantity}</td>
+                </tr>`;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        function groupData(data) {
+            let grouped = {};
+
+            data.forEach(item => {
+                const key = `${item.region}-${item.product}`;
+                if (!grouped[key]) {
+                    grouped[key] = { region: item.region, product: item.product, totalQuantity: 0 };
+                }
+                grouped[key].totalQuantity += item.quantity;
+            });
+
+            return Object.values(grouped);
+        }
+
+        function searchData() {
+            const searchTerm = document.getElementById('search').value.toLowerCase();
+            const filteredData = originalData.filter(item =>
+                item.region.toLowerCase().includes(searchTerm) || item.product.toLowerCase().includes(searchTerm)
+            );
+            displayData(filteredData);
+        }
+
+    </script>
 </body>
 </html>
