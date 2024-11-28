@@ -3,46 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A.G Sales Filter</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Excel Filter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        input[type="file"] {
+            margin-bottom: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .filter-container {
+            margin-bottom: 20px;
+        }
+        select {
+            padding: 5px;
+            margin-right: 10px;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>A.G Sales Filter</h1>
-        <p>Upload your Excel file, select your territory and product name, and view your sales data.</p>
-    </header>
-    <main>
-        <input type="file" id="file-input" accept=".xlsx" />
-        <div id="filter-container" style="display: none;">
-            <div class="filters">
-                <div class="filter-section">
-                    <label for="territory-search">Search Territory:</label>
-                    <input type="text" id="territory-search" placeholder="Type to search...">
-                    <div id="territory-list" class="checkbox-list"></div>
-                </div>
-
-                <div class="filter-section">
-                    <label for="product-search">Search Product:</label>
-                    <input type="text" id="product-search" placeholder="Type to search...">
-                    <div id="product-list" class="checkbox-list"></div>
-                </div>
-            </div>
-            <button id="filter-btn">Filter Data</button>
-        </div>
-        <table id="filtered-data-table" style="display: none;">
-            <thead>
-                <tr>
-                    <th>Territory</th>
-                    <th>Product</th>
-                    <th>Total Sales</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </main>
-    <footer>
-        <p>Designed by Ahmed Gawish</p>
-    </footer>
+    <h1>تصفية البيانات من ملف Excel</h1>
+    <input type="file" id="fileInput" accept=".xlsx, .xls">
+    <div class="filter-container">
+        <label for="filterColumn">اختر العمود:</label>
+        <select id="filterColumn" onchange="updateFilterValues()">
+            <option value="">اختر</option>
+        </select>
+        <label for="filterValue">اختر القيمة:</label>
+        <select id="filterValue" onchange="applyFilter()">
+            <option value="">الكل</option>
+        </select>
+    </div>
+    <table id="dataTable">
+        <thead>
+            <tr id="tableHeader"></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
