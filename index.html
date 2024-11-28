@@ -4,79 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A.G Sales Filter</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f9;
-        }
-        header {
-            background-color: #007bff;
-            color: white;
-            text-align: center;
-            padding: 10px 0;
-        }
-        footer {
-            background-color: #ddd;
-            text-align: center;
-            padding: 10px;
-            margin-top: 20px;
-        }
-        .container {
-            margin: 20px auto;
-            max-width: 800px;
-            background: #fff;
-            padding: 20px;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        table, th, td {
-            border: 1px solid #ddd;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-        }
-        .btn {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        .btn:hover {
-            background-color: #0056b3;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
+    <div class="header">
         <h1>A.G Sales Filter</h1>
         <p>Upload your Excel file, select your territory and product name, and view your sales data.</p>
-    </header>
-    <div class="container">
-        <input type="file" id="fileInput" accept=".xlsx">
-        <div>
-            <label for="territory">Select Territory:</label>
-            <select id="territory" multiple>
-                <option>Search</option>
-            </select>
-        </div>
-        <div>
-            <label for="product">Select Product:</label>
-            <select id="product" multiple>
-                <option>Search</option>
-            </select>
-        </div>
-        <button class="btn" id="filterButton">Filter Data</button>
-        <table id="resultTable" style="display: none;">
+    </div>
+
+    <div class="upload-section">
+        <label for="excelFile">Upload Excel File:</label>
+        <input type="file" id="excelFile" accept=".xlsx, .xls">
+    </div>
+
+    <div class="filter-section">
+        <label for="territory">Territory:</label>
+        <select id="territory">
+            <option value="search">Search...</option>
+        </select>
+        <input type="text" id="territorySearch" placeholder="Search Territories..." style="display: none;">
+
+        <label for="product">Product:</label>
+        <select id="product">
+            <option value="search">Search...</option>
+        </select>
+        <input type="text" id="productSearch" placeholder="Search Products..." style="display: none;">
+    </div>
+
+    <button id="filterButton">Filter Data</button>
+
+    <div class="results-section">
+        <table id="resultsTable">
             <thead>
                 <tr>
                     <th>Territory</th>
@@ -84,13 +42,17 @@
                     <th>Total Sales</th>
                 </tr>
             </thead>
-            <tbody></tbody>
+            <tbody>
+                <!-- Filtered data will appear here -->
+            </tbody>
         </table>
     </div>
-    <footer>
-        Designed by Ahmed Gawish
-    </footer>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <div class="footer">
+        <p>Designed by Ahmed Gawish</p>
+    </div>
+
+    <script src="xlsx.full.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
