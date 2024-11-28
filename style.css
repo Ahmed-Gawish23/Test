@@ -80,8 +80,13 @@ button {
     margin-bottom: 10px;
 }
 
+/* تنسيق الـ checkboxes */
 .checkbox-container {
     max-height: 150px;
     overflow-y: auto;
     margin-bottom: 10px;
+}
+
+.checkbox-container input {
+    margin-right: 10px;
 }
