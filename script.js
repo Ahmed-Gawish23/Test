@@ -1,99 +1,114 @@
-document.getElementById("fileInput").addEventListener("change", async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
+document.getElementById("fileInput").addEventListener("change", handleFile);
 
-  const data = await file.arrayBuffer();
-  const workbook = XLSX.read(data);
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+let salesData = []; // لتخزين البيانات بعد رفع الملف
 
-  let jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+function handleFile(event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
 
-  let validRowIndex = jsonData.findIndex(row =>
-    row.includes("Territory Name") ||
-    row.includes("ZONE_NAME") ||
-    row.includes("Item Name") ||
-    row.includes("Product Name") ||
-    row.includes("PRODUCT_NAME") ||
-    row.includes("Sales") ||
-    row.includes("QTY") ||
-    row.includes("NET_QUANTITY")
-  );
+    reader.onload = function (e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
 
-  if (validRowIndex === -1) {
-    alert("No valid data found in the file");
-    return;
-  }
+        // قراءة أول شيت
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-  jsonData = jsonData.slice(validRowIndex);
-  const headers = jsonData.shift();
+        processExcelData(jsonData);
+    };
 
-  const validData = jsonData.map(row => {
-    const obj = {};
+    reader.readAsArrayBuffer(file);
+}
+
+function processExcelData(data) {
+    // تخطي الصف الأول إذا كان مدمجًا
+    const headers = data[0].some(cell => cell === null) ? data[1] : data[0];
+    const rows = data.slice(headers === data[1] ? 2 : 1);
+
+    const distributorColumns = {
+        "Territory Name": "Territory",
+        "Product Name": "Product",
+        "Sales": "Sales",
+        "Item Name": "Product",
+        "QTY": "Sales",
+        "ZONE_NAME": "Territory",
+        "PRODUCT_NAME": "Product",
+        "NET_QUANTITY": "Sales",
+    };
+
+    const columns = {};
     headers.forEach((header, index) => {
-      obj[header] = row[index];
+        if (distributorColumns[header]) {
+            columns[distributorColumns[header]] = index;
+        }
     });
-    return obj;
-  });
 
-  let columnMapping = {};
-  const columnNames = Object.keys(validData[0]);
+    salesData = rows.map(row => ({
+        Territory: row[columns["Territory"]],
+        Product: row[columns["Product"]],
+        Sales: Number(row[columns["Sales"]]) || 0,
+    }));
 
-  if (columnNames.includes("Product Name") && columnNames.includes("Territory Name") && columnNames.includes("Sales")) {
-    columnMapping = { item: "Product Name", territory: "Territory Name", qty: "Sales" };
-  } else if (columnNames.includes("Item Name") && columnNames.includes("Territory Name") && columnNames.includes("QTY")) {
-    columnMapping = { item: "Item Name", territory: "Territory Name", qty: "QTY" };
-  } else if (columnNames.includes("PRODUCT_NAME") && columnNames.includes("ZONE_NAME") && columnNames.includes("NET_QUANTITY")) {
-    columnMapping = { item: "PRODUCT_NAME", territory: "ZONE_NAME", qty: "NET_QUANTITY" };
-  } else {
-    alert("Unknown file format");
-    return;
-  }
+    populateFilters();
+}
 
-  const items = [...new Set(validData.map(row => row[columnMapping.item]).filter(Boolean))].sort();
-  const territories = [...new Set(validData.map(row => row[columnMapping.territory]).filter(Boolean))].sort();
+function populateFilters() {
+    const territories = [...new Set(salesData.map(row => row.Territory))].sort();
+    const products = [...new Set(salesData.map(row => row.Product))].sort();
 
-  const itemSelect = document.getElementById("itemSelect");
-  const territorySelect = document.getElementById("territorySelect");
+    populateDropdown("territory", territories);
+    populateDropdown("product", products);
+}
 
-  itemSelect.innerHTML = "";
-  territorySelect.innerHTML = "";
+function populateDropdown(id, options) {
+    const select = document.getElementById(id);
+    select.innerHTML = '<option>Search</option>';
+    options.forEach(option => {
+        const opt = document.createElement("option");
+        opt.value = option;
+        opt.textContent = option;
+        select.appendChild(opt);
+    });
+}
 
-  items.forEach(item => {
-    const option = document.createElement("option");
-    option.value = item;
-    option.textContent = item;
-    itemSelect.appendChild(option);
-  });
+document.getElementById("filterButton").addEventListener("click", filterData);
 
-  territories.forEach(territory => {
-    const option = document.createElement("option");
-    option.value = territory;
-    option.textContent = territory;
-    territorySelect.appendChild(option);
-  });
+function filterData() {
+    const selectedTerritories = Array.from(document.getElementById("territory").selectedOptions).map(opt => opt.value);
+    const selectedProducts = Array.from(document.getElementById("product").selectedOptions).map(opt => opt.value);
 
-  document.getElementById("filterButton").addEventListener("click", () => {
-    const selectedItems = Array.from(itemSelect.selectedOptions).map(option => option.value);
-    const selectedTerritories = Array.from(territorySelect.selectedOptions).map(option => option.value);
-
-    const filteredData = validData.filter(row =>
-      selectedItems.includes(row[columnMapping.item]) &&
-      selectedTerritories.includes(row[columnMapping.territory])
+    const filteredData = salesData.filter(row =>
+        (selectedTerritories.includes(row.Territory) || selectedTerritories.includes("Search")) &&
+        (selectedProducts.includes(row.Product) || selectedProducts.includes("Search"))
     );
 
-    const result = {};
-    filteredData.forEach(row => {
-      const key = `${row[columnMapping.item]} - ${row[columnMapping.territory]}`;
-      if (!result[key]) result[key] = 0;
-      result[key] += row[columnMapping.qty];
+    const groupedData = filteredData.reduce((acc, row) => {
+        const key = `${row.Territory}-${row.Product}`;
+        if (!acc[key]) {
+            acc[key] = { Territory: row.Territory, Product: row.Product, Sales: 0 };
+        }
+        acc[key].Sales += row.Sales;
+        return acc;
+    }, {});
+
+    displayResults(Object.values(groupedData));
+}
+
+function displayResults(data) {
+    const table = document.getElementById("resultTable");
+    const tbody = table.querySelector("tbody");
+    tbody.innerHTML = "";
+
+    data.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${row.Territory}</td>
+            <td>${row.Product}</td>
+            <td>${row.Sales}</td>
+        `;
+        tbody.appendChild(tr);
     });
 
-    const output = document.getElementById("output");
-    output.innerHTML = "<h3>Filtered Results:</h3>";
-    Object.entries(result).forEach(([key, qty]) => {
-      const p = document.createElement("p");
-      p.textContent = `${key}: ${qty} boxes`;
-      output.appendChild(p);
-    });
-  });
-});
+    table.style.display = data.length ? "block" : "none";
+}
