@@ -4,10 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A.G Sales Filter</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
     <header>
@@ -15,25 +14,27 @@
         <p>Upload your Excel file, select your territory and product name, and view your sales data.</p>
     </header>
 
-    <main>
-        <section>
-            <input type="file" id="upload" accept=".xlsx, .xls" />
-            <div id="filters">
-                <label for="territory-select">Select Territory:</label>
-                <select id="territory-select" multiple>
-                    <option value="all">Select All</option>
-                </select>
-
-                <label for="product-select">Select Product:</label>
-                <select id="product-select" multiple>
-                    <option value="all">Select All</option>
-                </select>
+    <div class="container mt-4">
+        <div class="mb-3">
+            <label for="fileInput" class="form-label">Upload Excel File:</label>
+            <input type="file" class="form-control" id="fileInput" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
+        </div>
+        <div id="filterSection" class="d-none">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="territorySelect" class="form-label">Select Territory:</label>
+                    <select id="territorySelect" class="form-select" multiple></select>
+                </div>
+                <div class="col-md-6">
+                    <label for="productSelect" class="form-label">Select Product:</label>
+                    <select id="productSelect" class="form-select" multiple></select>
+                </div>
             </div>
-            <button id="filter-btn">Filter</button>
-        </section>
-
-        <section>
-            <table id="sales-table" class="display">
+            <button id="filterButton" class="btn btn-primary">Filter</button>
+        </div>
+        <div id="outputSection" class="mt-4 d-none">
+            <h3>Filtered Data:</h3>
+            <table class="table table-bordered bordered-table">
                 <thead>
                     <tr>
                         <th>Territory</th>
@@ -41,13 +42,13 @@
                         <th>Total Sales</th>
                     </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody id="outputTable"></tbody>
             </table>
-        </section>
-    </main>
+        </div>
+    </div>
 
     <footer>
-        <p>Designed by Ahmed Gawish</p>
+        Designed by Ahmed Gawish
     </footer>
 
     <script src="script.js"></script>
