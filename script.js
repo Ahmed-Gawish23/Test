@@ -26,6 +26,10 @@ function handleFile(event) {
         const headers = rows[0];
         data = rows.slice(1).map(row => Object.fromEntries(row.map((cell, i) => [headers[i], cell])));
 
+        // Debugging: Print the headers and the first few rows to check the data
+        console.log("Headers:", headers);
+        console.log("First few rows of data:", data.slice(0, 5));
+
         detectDistributor(headers);
         populateFilters();
         document.getElementById("filterSection").classList.remove("d-none");
@@ -55,14 +59,14 @@ function populateFilters() {
     // Create checkboxes for Territory
     territorySet.forEach(value => {
         const div = document.createElement("div");
-        div.innerHTML = `<input type="checkbox" id="territory_${value}" value="${value}"> <label for="territory_${value}">${value}</label>`;
+        div.innerHTML = `<input type="checkbox" class="territoryCheckbox" id="territory_${value}" value="${value}"> <label for="territory_${value}">${value}</label>`;
         territoryCheckboxes.appendChild(div);
     });
 
     // Create checkboxes for Product
     productSet.forEach(value => {
         const div = document.createElement("div");
-        div.innerHTML = `<input type="checkbox" id="product_${value}" value="${value}"> <label for="product_${value}">${value}</label>`;
+        div.innerHTML = `<input type="checkbox" class="productCheckbox" id="product_${value}" value="${value}"> <label for="product_${value}">${value}</label>`;
         productCheckboxes.appendChild(div);
     });
 
@@ -86,16 +90,15 @@ function populateFilters() {
     });
 }
 
-function filterCheckboxes(type, searchText) {
-    const checkboxes = document.querySelectorAll(`#${type}Checkboxes input`);
+function filterCheckboxes(type, value) {
+    const checkboxes = document.querySelectorAll(`.${type}Checkbox`);
     checkboxes.forEach(checkbox => {
-        const label = checkbox.nextElementSibling.textContent;
-        if (label.toLowerCase().includes(searchText.toLowerCase())) {
-            checkbox.parentElement.style.display = 'block';
+        if (checkbox.value.toLowerCase().includes(value.toLowerCase())) {
+            checkbox.parentElement.style.display = '';
         } else {
             checkbox.parentElement.style.display = 'none';
         }
     });
 }
 
-document.getElementById("filter
+document.getElementById("filterButton").
