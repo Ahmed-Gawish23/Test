@@ -1,85 +1,58 @@
 body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  background-color: #f0f4f8;  /* لون خلفية أكثر نعومة */
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f9;
 }
 
-.container {
-  max-width: 800px;
-  margin: 20px auto;
-  padding: 20px;
-  background: #ffffff;  /* خلفية بيضاء للمنطقة الرئيسية */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);  /* إضافة ظل خفيف للمحتوى */
-  border-radius: 10px;  /* تدوير الحواف */
+.header {
+    text-align: center;
+    background-color: #2a9d8f;
+    color: #ffffff;
+    padding: 20px;
 }
 
-h1 {
-  color: #2c3e50;  /* لون داكن أكثر وضوحًا للعنوان */
-  font-size: 2em;
-  text-align: center;
-  margin-bottom: 10px;
-}
-
-p {
-  text-align: center;
-  margin: 10px 0;
-  font-size: 1.1em;
-  color: #7f8c8d;  /* لون داكن للكتابة */
-}
-
-input[type="file"] {
-  display: block;
-  margin: 20px auto;
-  background-color: #eaf1f4;  /* خلفية خفيفة */
-  border-radius: 5px;
-  padding: 10px;
-}
-
-#filters {
-  margin: 20px 0;
-  display: flex;
-  flex-direction: column;
+.upload-section, .filter-section, .results-section {
+    margin: 20px auto;
+    max-width: 600px;
+    text-align: center;
 }
 
 label {
-  margin: 10px 0 5px;
-  font-weight: bold;
-  color: #34495e;  /* لون جيد للنصوص */
+    font-weight: bold;
 }
 
-select {
-  margin-bottom: 10px;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  background-color: #ecf0f1;  /* خلفية خفيفة للقائمة */
-  color: #34495e;
-  font-size: 1.1em;
+select, input[type="text"] {
+    width: 100%;
+    margin: 10px 0;
+    padding: 10px;
+    font-size: 14px;
 }
 
-button {
-  background-color: #3498db;  /* لون زر مميز */
-  color: #fff;
-  border: none;
-  padding: 12px 20px;
-  cursor: pointer;
-  border-radius: 5px;
-  font-size: 1.1em;
-  width: 100%;
+#filterButton {
+    background-color: #2a9d8f;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
 }
 
-button:hover {
-  background-color: #2980b9;  /* تدرج للزر عند التمرير */
+#resultsTable {
+    margin: 20px auto;
+    width: 90%;
+    border-collapse: collapse;
 }
 
-footer {
-  text-align: center;
-  margin-top: 40px;
-  font-size: 14px;
-  color: #7f8c8d;
-  background-color: #2c3e50;
-  padding: 10px;
-  color: white;
-  border-radius: 5px;
+#resultsTable th, #resultsTable td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
+}
+
+.footer {
+    text-align: center;
+    background-color: #2a9d8f;
+    color: #ffffff;
+    padding: 10px;
 }
