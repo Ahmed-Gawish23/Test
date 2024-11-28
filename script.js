@@ -46,50 +46,56 @@ function populateFilters() {
     const territorySet = new Set(data.map(row => row[currentColumns.territory]));
     const productSet = new Set(data.map(row => row[currentColumns.product]));
 
-    const territorySelect = document.getElementById("territorySelect");
-    const productSelect = document.getElementById("productSelect");
+    const territoryCheckboxes = document.getElementById("territoryCheckboxes");
+    const productCheckboxes = document.getElementById("productCheckboxes");
 
-    territorySelect.innerHTML = "";
-    productSelect.innerHTML = "";
+    territoryCheckboxes.innerHTML = "";
+    productCheckboxes.innerHTML = "";
 
-    [...territorySet].sort().forEach(value => {
-        const option = document.createElement("option");
-        option.value = value;
-        option.textContent = value;
-        territorySelect.appendChild(option);
+    // Create checkboxes for Territory
+    territorySet.forEach(value => {
+        const div = document.createElement("div");
+        div.innerHTML = `<input type="checkbox" id="territory_${value}" value="${value}"> <label for="territory_${value}">${value}</label>`;
+        territoryCheckboxes.appendChild(div);
     });
 
-    [...productSet].sort().forEach(value => {
-        const option = document.createElement("option");
-        option.value = value;
-        option.textContent = value;
-        productSelect.appendChild(option);
+    // Create checkboxes for Product
+    productSet.forEach(value => {
+        const div = document.createElement("div");
+        div.innerHTML = `<input type="checkbox" id="product_${value}" value="${value}"> <label for="product_${value}">${value}</label>`;
+        productCheckboxes.appendChild(div);
+    });
+
+    // Enable search functionality for territory and product checkboxes
+    $("#territorySearch").autocomplete({
+        source: [...territorySet],
+        minLength: 2,
+        select: function(event, ui) {
+            $("#territorySearch").val(ui.item.value);
+            filterCheckboxes('territory', ui.item.value);
+        }
+    });
+
+    $("#productSearch").autocomplete({
+        source: [...productSet],
+        minLength: 2,
+        select: function(event, ui) {
+            $("#productSearch").val(ui.item.value);
+            filterCheckboxes('product', ui.item.value);
+        }
     });
 }
 
-document.getElementById("filterButton").addEventListener("click", () => {
-    const selectedTerritories = Array.from(document.getElementById("territorySelect").selectedOptions).map(opt => opt.value);
-    const selectedProducts = Array.from(document.getElementById("productSelect").selectedOptions).map(opt => opt.value);
-
-    const filteredData = data.filter(row =>
-        selectedTerritories.includes(row[currentColumns.territory]) &&
-        selectedProducts.includes(row[currentColumns.product])
-    );
-
-    const aggregatedData = {};
-    filteredData.forEach(row => {
-        const key = `${row[currentColumns.territory]}|${row[currentColumns.product]}`;
-        aggregatedData[key] = (aggregatedData[key] || 0) + +row[currentColumns.sales];
+function filterCheckboxes(type, searchText) {
+    const checkboxes = document.querySelectorAll(`#${type}Checkboxes input`);
+    checkboxes.forEach(checkbox => {
+        const label = checkbox.nextElementSibling.textContent;
+        if (label.toLowerCase().includes(searchText.toLowerCase())) {
+            checkbox.parentElement.style.display = 'block';
+        } else {
+            checkbox.parentElement.style.display = 'none';
+        }
     });
+}
 
-    const outputTable = document.getElementById("outputTable");
-    outputTable.innerHTML = "";
-
-    Object.entries(aggregatedData).forEach(([key, totalSales]) => {
-        const [territory, product] = key.split("|");
-        const row = `<tr><td>${territory}</td><td>${product}</td><td>${totalSales}</td></tr>`;
-        outputTable.innerHTML += row;
-    });
-
-    document.getElementById("outputSection").classList.remove("d-none");
-});
+document.getElementById("filter
