@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A.G Sales Filter</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- إضافة مكتبة jQuery UI الخاصة بالبحث داخل القائمة -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
     <header>
@@ -23,11 +26,13 @@
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label for="territorySelect" class="form-label">Select Territory:</label>
-                    <select id="territorySelect" class="form-select" multiple></select>
+                    <input type="text" id="territorySearch" class="form-control mb-2" placeholder="Search Territory">
+                    <div id="territoryCheckboxes"></div>
                 </div>
                 <div class="col-md-6">
                     <label for="productSelect" class="form-label">Select Product:</label>
-                    <select id="productSelect" class="form-select" multiple></select>
+                    <input type="text" id="productSearch" class="form-control mb-2" placeholder="Search Product">
+                    <div id="productCheckboxes"></div>
                 </div>
             </div>
             <button id="filterButton" class="btn btn-primary">Filter</button>
