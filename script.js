@@ -1,108 +1,95 @@
-document.getElementById("upload").addEventListener("change", handleFile);
-document.getElementById("filter-btn").addEventListener("click", filterData);
+document.getElementById("fileInput").addEventListener("change", handleFile);
 
-let rawData = [];
-let filteredData = [];
-const distributors = {
-    "PharmaOverseas": { territory: "Territory Name", product: "Product Name", qty: "Sales" },
-    "Ibnsina": { territory: "Territory Name", product: "Item Name", qty: "QTY" },
-    "ABOU KIR": { territory: "ZONE_NAME", product: "PRODUCT_NAME", qty: "NET_QUANTITY" },
+const distributorColumns = {
+    "PharmaOverseas": { territory: "Territory Name", product: "Product Name", sales: "Sales" },
+    "Ibnsina": { territory: "Territory Name", product: "Item Name", sales: "QTY" },
+    "ABOU KIR": { territory: "ZONE_NAME", product: "PRODUCT_NAME", sales: "NET_QUANTITY" },
 };
 
-function handleFile(e) {
-    const file = e.target.files[0];
+let data = [];
+let currentColumns = {};
+
+function handleFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
     const reader = new FileReader();
-
-    reader.onload = function (e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
+    reader.onload = (e) => {
+        const workbook = XLSX.read(e.target.result, { type: "binary" });
         const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
 
-        processSheet(jsonData);
+        // Skip merged header row
+        const validRowIndex = sheet.findIndex(row => row.includes("Territory Name") || row.includes("ZONE_NAME"));
+        const rows = sheet.slice(validRowIndex);
+
+        const headers = rows[0];
+        data = rows.slice(1).map(row => Object.fromEntries(row.map((cell, i) => [headers[i], cell])));
+
+        detectDistributor(headers);
+        populateFilters();
+        document.getElementById("filterSection").classList.remove("d-none");
     };
-
-    reader.readAsArrayBuffer(file);
+    reader.readAsBinaryString(file);
 }
 
-function processSheet(sheetData) {
-    // Skip merged header row
-    let startRow = 0;
-    while (typeof sheetData[startRow][0] === "string" && sheetData[startRow][0].includes("Header")) {
-        startRow++;
+function detectDistributor(headers) {
+    for (const [distributor, columns] of Object.entries(distributorColumns)) {
+        if (headers.includes(columns.territory)) {
+            currentColumns = columns;
+            break;
+        }
     }
-
-    const headers = sheetData[startRow];
-    const distributor = identifyDistributor(headers);
-    if (!distributor) {
-        alert("Unrecognized sheet format.");
-        return;
-    }
-
-    rawData = sheetData.slice(startRow + 1).map(row => ({
-        territory: row[headers.indexOf(distributor.territory)],
-        product: row[headers.indexOf(distributor.product)],
-        qty: parseInt(row[headers.indexOf(distributor.qty)] || 0),
-    }));
-
-    populateFilters();
-}
-
-function identifyDistributor(headers) {
-    return Object.values(distributors).find(
-        dist => headers.includes(dist.territory) && headers.includes(dist.product) && headers.includes(dist.qty)
-    );
 }
 
 function populateFilters() {
-    const territories = [...new Set(rawData.map(row => row.territory))].sort();
-    const products = [...new Set(rawData.map(row => row.product))].sort();
+    const territorySet = new Set(data.map(row => row[currentColumns.territory]));
+    const productSet = new Set(data.map(row => row[currentColumns.product]));
 
-    const territorySelect = document.getElementById("territory-select");
-    const productSelect = document.getElementById("product-select");
+    const territorySelect = document.getElementById("territorySelect");
+    const productSelect = document.getElementById("productSelect");
 
-    territories.forEach(territory => {
+    territorySelect.innerHTML = "";
+    productSelect.innerHTML = "";
+
+    [...territorySet].sort().forEach(value => {
         const option = document.createElement("option");
-        option.value = territory;
-        option.textContent = territory;
+        option.value = value;
+        option.textContent = value;
         territorySelect.appendChild(option);
     });
 
-    products.forEach(product => {
+    [...productSet].sort().forEach(value => {
         const option = document.createElement("option");
-        option.value = product;
-        option.textContent = product;
+        option.value = value;
+        option.textContent = value;
         productSelect.appendChild(option);
     });
 }
 
-function filterData() {
-    const selectedTerritories = Array.from(document.getElementById("territory-select").selectedOptions).map(opt => opt.value);
-    const selectedProducts = Array.from(document.getElementById("product-select").selectedOptions).map(opt => opt.value);
+document.getElementById("filterButton").addEventListener("click", () => {
+    const selectedTerritories = Array.from(document.getElementById("territorySelect").selectedOptions).map(opt => opt.value);
+    const selectedProducts = Array.from(document.getElementById("productSelect").selectedOptions).map(opt => opt.value);
 
-    filteredData = rawData.filter(row =>
-        (selectedTerritories.includes("all") || selectedTerritories.includes(row.territory)) &&
-        (selectedProducts.includes("all") || selectedProducts.includes(row.product))
+    const filteredData = data.filter(row =>
+        selectedTerritories.includes(row[currentColumns.territory]) &&
+        selectedProducts.includes(row[currentColumns.product])
     );
 
-    displayData();
-}
-
-function displayData() {
-    const tableBody = document.querySelector("#sales-table tbody");
-    tableBody.innerHTML = "";
-
-    const groupedData = filteredData.reduce((acc, row) => {
-        const key = `${row.territory}-${row.product}`;
-        if (!acc[key]) acc[key] = { territory: row.territory, product: row.product, qty: 0 };
-        acc[key].qty += row.qty;
-        return acc;
-    }, {});
-
-    Object.values(groupedData).forEach(row => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${row.territory}</td><td>${row.product}</td><td>${row.qty}</td>`;
-        tableBody.appendChild(tr);
+    const aggregatedData = {};
+    filteredData.forEach(row => {
+        const key = `${row[currentColumns.territory]}|${row[currentColumns.product]}`;
+        aggregatedData[key] = (aggregatedData[key] || 0) + +row[currentColumns.sales];
     });
-}
+
+    const outputTable = document.getElementById("outputTable");
+    outputTable.innerHTML = "";
+
+    Object.entries(aggregatedData).forEach(([key, totalSales]) => {
+        const [territory, product] = key.split("|");
+        const row = `<tr><td>${territory}</td><td>${product}</td><td>${totalSales}</td></tr>`;
+        outputTable.innerHTML += row;
+    });
+
+    document.getElementById("outputSection").classList.remove("d-none");
+});
