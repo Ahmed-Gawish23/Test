@@ -74,3 +74,14 @@ button, select, input {
 button {
     margin-top: 15px;
 }
+
+/* تنسيق مربعات البحث */
+#territorySearch, #productSearch {
+    margin-bottom: 10px;
+}
+
+.checkbox-container {
+    max-height: 150px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
