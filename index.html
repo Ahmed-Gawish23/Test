@@ -1,58 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A.G Sales Filter</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A.G Sales Filter</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h1 {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px;
+      text-align: center;
+    }
+    footer {
+      background-color: #f1f1f1;
+      text-align: center;
+      padding: 10px;
+      margin-top: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    th {
+      background-color: #f2f2f2;
+      text-align: left;
+    }
+    #filters {
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
-    <div class="header">
-        <h1>A.G Sales Filter</h1>
-        <p>Upload your Excel file, select your territory and product name, and view your sales data.</p>
-    </div>
+  <h1>A.G Sales Filter</h1>
+  <p>Upload your Excel file, select your territory and product name, and view your sales data.</p>
+  <input type="file" id="uploadFile" />
+  <div id="filters">
+    <h3>Filters:</h3>
+    <div id="checkboxes"></div>
+    <button id="selectAll">Select All</button>
+  </div>
+  <table id="filteredData">
+    <thead>
+      <tr>
+        <th>Territory</th>
+        <th>Product</th>
+        <th>Sales</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <footer>Designed by Ahmed Gawish</footer>
 
-    <div class="upload-section">
-        <label for="excelFile">Upload Excel File:</label>
-        <input type="file" id="excelFile" accept=".xlsx, .xls">
-    </div>
+  <script>
+    document.getElementById("uploadFile").addEventListener("change", handleFile);
 
-    <div class="filter-section">
-        <label for="territory">Territory:</label>
-        <select id="territory">
-            <option value="search">Search...</option>
-        </select>
-        <input type="text" id="territorySearch" placeholder="Search Territories..." style="display: none;">
+    function handleFile(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
 
-        <label for="product">Product:</label>
-        <select id="product">
-            <option value="search">Search...</option>
-        </select>
-        <input type="text" id="productSearch" placeholder="Search Products..." style="display: none;">
-    </div>
+        // Assuming the first sheet is the target
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-    <button id="filterButton">Filter Data</button>
+        processData(json);
+      };
+      reader.readAsArrayBuffer(file);
+    }
 
-    <div class="results-section">
-        <table id="resultsTable">
-            <thead>
-                <tr>
-                    <th>Territory</th>
-                    <th>Product</th>
-                    <th>Total Sales</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Filtered data will appear here -->
-            </tbody>
-        </table>
-    </div>
+    function processData(data) {
+      // Skip merged headers and find start of data
+      let startRow = 0;
+      while (data[startRow] && data[startRow].some(cell => !cell)) {
+        startRow++;
+      }
+      const headers = data[startRow];
+      const rows = data.slice(startRow + 1);
 
-    <div class="footer">
-        <p>Designed by Ahmed Gawish</p>
-    </div>
+      // Distributor-specific mappings
+      const distributorMappings = [
+        { name: "PharmaOverseas", territory: "Territory Name", product: "Product Name", qty: "Sales" },
+        { name: "Ibnsina", territory: "Territory Name", product: "Item Name", qty: "QTY" },
+        { name: "ABOU KIR", territory: "ZONE_NAME", product: "PRODUCT_NAME", qty: "NET_QUANTITY" }
+      ];
 
-    <script src="xlsx.full.min.js"></script>
-    <script src="script.js"></script>
+      // Allow manual column mapping
+      let selectedMapping = distributorMappings.find(mapping => 
+        headers.includes(mapping.territory) && headers.includes(mapping.product) && headers.includes(mapping.qty)
+      );
+
+      if (!selectedMapping) {
+        alert("Could not detect distributor. Please use manual mapping.");
+        return;
+      }
+
+      // Extract indices based on mapping
+      const territoryIndex = headers.indexOf(selectedMapping.territory);
+      const productIndex = headers.indexOf(selectedMapping.product);
+      const qtyIndex = headers.indexOf(selectedMapping.qty);
+
+      // Filter and aggregate data
+      const aggregatedData = {};
+      rows.forEach(row => {
+        const territory = row[territoryIndex];
+        const product = row[productIndex];
+        const qty = parseInt(row[qtyIndex], 10) || 0;
+
+        if (!aggregatedData[territory]) {
+          aggregatedData[territory] = {};
+        }
+        if (!aggregatedData[territory][product]) {
+          aggregatedData[territory][product] = 0;
+        }
+        aggregatedData[territory][product] += qty;
+      });
+
+      displayData(aggregatedData);
+    }
+
+    function displayData(data) {
+      const tableBody = document.querySelector("#filteredData tbody");
+      tableBody.innerHTML = "";
+
+      for (const territory in data) {
+        for (const product in data[territory]) {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${territory}</td>
+            <td>${product}</td>
+            <td>${data[territory][product]}</td>
+          `;
+          tableBody.appendChild(row);
+        }
+      }
+
+      // Initialize DataTable
+      $("#filteredData").DataTable();
+    }
+  </script>
 </body>
 </html>
