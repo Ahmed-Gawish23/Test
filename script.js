@@ -1,147 +1,129 @@
-let data = [];
-let columnMap = {};
+document.addEventListener("DOMContentLoaded", () => {
+    $('.filter-select').select2({
+        placeholder: "Select an option",
+        allowClear: true,
+    });
+});
 
-document.getElementById('file-upload').addEventListener('change', handleFileUpload);
+let excelData = [];
 
-function handleFileUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
+function parseExcel(file) {
     const reader = new FileReader();
-    reader.onload = function (e) {
-        const workbook = XLSX.read(e.target.result, { type: 'binary' });
+    reader.onload = (event) => {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
         const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        handleHeader(rows);
+        const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+
+        processSheetData(sheetData);
     };
-    reader.readAsBinaryString(file);
+    reader.readAsArrayBuffer(file);
 }
 
-function handleHeader(rows) {
-    const headerRowIndex = rows.findIndex(row => row.some(cell => typeof cell === 'string' && cell.toLowerCase().includes('territory')));
-    if (headerRowIndex === -1) {
-        alert('Invalid file format!');
+function processSheetData(sheetData) {
+    let headers = sheetData.find(row => !row.some(cell => typeof cell === "undefined"));
+    let contentStartIndex = sheetData.indexOf(headers) + 1;
+
+    const mapping = {
+        "PharmaOverseas": { territory: "Territory Name", product: "Product Name", qty: "Sales" },
+        "Ibnsina": { territory: "Territory Name", product: "Item Name", qty: "QTY" },
+        "ABOU KIR": { territory: "ZONE_NAME", product: "PRODUCT_NAME", qty: "NET_QUANTITY" },
+    };
+
+    let distributorType = detectDistributor(headers, mapping);
+
+    if (!distributorType) {
+        alert("Unknown distributor format.");
         return;
     }
 
-    data = rows.slice(headerRowIndex + 1);
-    columnMap = detectColumns(rows[headerRowIndex]);
-    populateFilters(data, columnMap);
+    const { territory, product, qty } = mapping[distributorType];
+
+    excelData = sheetData.slice(contentStartIndex).map(row => ({
+        territory: row[headers.indexOf(territory)],
+        product: row[headers.indexOf(product)],
+        qty: parseInt(row[headers.indexOf(qty)]) || 0,
+    }));
+
+    populateFilters();
 }
 
-function detectColumns(headerRow) {
-    const map = {};
-    headerRow.forEach((col, index) => {
-        if (/territory/i.test(col)) map.territory = index;
-        if (/product|item/i.test(col)) map.product = index;
-        if (/sales|qty|quantity/i.test(col)) map.sales = index;
-    });
-    return map;
+function detectDistributor(headers, mapping) {
+    return Object.keys(mapping).find(key =>
+        headers.includes(mapping[key].territory) &&
+        headers.includes(mapping[key].product) &&
+        headers.includes(mapping[key].qty)
+    );
 }
 
-function populateFilters(data, columns) {
-    const territories = [...new Set(data.map(row => row[columns.territory]).filter(Boolean))].sort();
-    const products = [...new Set(data.map(row => row[columns.product]).filter(Boolean))].sort();
+function populateFilters() {
+    const territories = [...new Set(excelData.map(row => row.territory))].sort();
+    const products = [...new Set(excelData.map(row => row.product))].sort();
 
-    populateDropdown('territory', territories);
-    populateDropdown('product', products);
-
-    // Initialize Select2 with multiple selection and Select All option
-    $('#territory, #product').select2({
-        placeholder: "Select options",
-        allowClear: true,
-        multiple: true,
-        width: 'resolve'
-    });
-
-    // Add "Select All" option for both filters
-    addSelectAllOption('territory', territories);
-    addSelectAllOption('product', products);
+    populateSelect("#territorySelect", territories);
+    populateSelect("#productSelect", products);
 }
 
-function addSelectAllOption(id, items) {
-    const select = document.getElementById(id);
-    const selectAllOption = document.createElement('option');
-    selectAllOption.value = 'select-all';
-    selectAllOption.textContent = 'Select All';
-    selectAllOption.dataset.selectAll = true;
-    select.insertBefore(selectAllOption, select.firstChild);
-
-    // Refresh the Select2 dropdown to reflect changes
-    $(select).trigger('change');
-}
-
-function populateDropdown(id, items) {
-    const select = document.getElementById(id);
-    select.innerHTML = ''; // Clear previous options
-    items.forEach(item => {
-        const option = document.createElement('option');
-        option.value = item;
-        option.textContent = item;
-        select.appendChild(option);
+function populateSelect(selector, options) {
+    const select = document.querySelector(selector);
+    select.innerHTML = "<option></option>";
+    options.forEach(option => {
+        const opt = document.createElement("option");
+        opt.value = option;
+        opt.textContent = option;
+        select.appendChild(opt);
     });
 }
-
-document.getElementById('filter-btn').addEventListener('click', filterData);
 
 function filterData() {
-    const selectedTerritories = getSelectedValues('territory');
-    const selectedProducts = getSelectedValues('product');
+    const selectedTerritory = document.querySelector("#territorySelect").value;
+    const selectedProduct = document.querySelector("#productSelect").value;
 
-    const filtered = data.filter(row =>
-        selectedTerritories.includes(row[columnMap.territory]) &&
-        selectedProducts.includes(row[columnMap.product])
+    const filteredData = excelData.filter(row =>
+        (!selectedTerritory || row.territory === selectedTerritory) &&
+        (!selectedProduct || row.product === selectedProduct)
     );
 
-    displayFilteredData(filtered);
+    displayData(filteredData);
 }
 
-function getSelectedValues(id) {
-    const selectedOptions = Array.from(document.getElementById(id).selectedOptions);
-    const allSelected = selectedOptions.some(opt => opt.value === 'select-all');
-    const values = selectedOptions.map(opt => opt.value);
+function displayData(data) {
+    const table = document.querySelector("#outputTable");
+    table.innerHTML = "";
 
-    // If "Select All" is selected, return all available values for that field
-    if (allSelected) {
-        const allOptions = Array.from(document.getElementById(id).options);
-        return allOptions.filter(opt => opt.value !== 'select-all').map(opt => opt.value);
+    if (data.length === 0) {
+        table.innerHTML = "<tr><td colspan='3'>No data found</td></tr>";
+        return;
     }
 
-    return values;
-}
+    const groupedData = data.reduce((acc, row) => {
+        const key = `${row.territory}-${row.product}`;
+        if (!acc[key]) acc[key] = { ...row, qty: 0 };
+        acc[key].qty += row.qty;
+        return acc;
+    }, {});
 
-function displayFilteredData(filteredData) {
-    const table = document.getElementById('filtered-data');
-    const aggregatedData = aggregateData(filteredData);
-    const headerRow = `
-        <tr>
-            <th>Territory</th>
-            <th>Product</th>
-            <th>Total Sales</th>
-        </tr>`;
-    const rows = aggregatedData.map(row =>
-        `<tr>
-            <td>${row.territory}</td>
-            <td>${row.product}</td>
-            <td>${row.totalSales}</td>
-        </tr>`
-    ).join('');
-    table.innerHTML = `<thead>${headerRow}</thead><tbody>${rows}</tbody>`;
-}
-
-function aggregateData(data) {
-    const result = {};
-    data.forEach(row => {
-        const key = `${row[columnMap.territory]}|${row[columnMap.product]}`;
-        if (!result[key]) {
-            result[key] = {
-                territory: row[columnMap.territory],
-                product: row[columnMap.product],
-                totalSales: 0,
-            };
-        }
-        result[key].totalSales += parseFloat(row[columnMap.sales]) || 0;
+    const rows = Object.values(groupedData);
+    const headerRow = document.createElement("tr");
+    ["Territory", "Product", "Total Quantity"].forEach(text => {
+        const th = document.createElement("th");
+        th.textContent = text;
+        headerRow.appendChild(th);
     });
-    return Object.values(result);
+    table.appendChild(headerRow);
+
+    rows.forEach(row => {
+        const tr = document.createElement("tr");
+        ["territory", "product", "qty"].forEach(key => {
+            const td = document.createElement("td");
+            td.textContent = row[key];
+            tr.appendChild(td);
+        });
+        table.appendChild(tr);
+    });
 }
+
+document.getElementById("fileInput").addEventListener("change", event => {
+    const file = event.target.files[0];
+    if (file) parseExcel(file);
+});
