@@ -1,14 +1,14 @@
+document.getElementById('file-upload').addEventListener('change', handleFile);
+
 let data = [];
 let columnMap = {};
 
-document.getElementById('file-upload').addEventListener('change', handleFileUpload);
-
-function handleFileUpload(event) {
+function handleFile(event) {
     const file = event.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function (e) {
+    reader.onload = (e) => {
         const workbook = XLSX.read(e.target.result, { type: 'binary' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
@@ -47,34 +47,23 @@ function populateFilters(data, columns) {
     populateDropdown('territory', territories);
     populateDropdown('product', products);
 
-    // Initialize Select2 with multiple selection and Select All option
+    // Initialize Select2
     $('#territory, #product').select2({
-        placeholder: "Select options",
+        placeholder: "Select an option",
         allowClear: true,
-        multiple: true,
-        width: 'resolve'
+        width: '100%'
     });
-
-    // Add "Select All" option for both filters
-    addSelectAllOption('territory', territories);
-    addSelectAllOption('product', products);
-}
-
-function addSelectAllOption(id, items) {
-    const select = document.getElementById(id);
-    const selectAllOption = document.createElement('option');
-    selectAllOption.value = 'select-all';
-    selectAllOption.textContent = 'Select All';
-    selectAllOption.dataset.selectAll = true;
-    select.insertBefore(selectAllOption, select.firstChild);
-
-    // Refresh the Select2 dropdown to reflect changes
-    $(select).trigger('change');
 }
 
 function populateDropdown(id, items) {
     const select = document.getElementById(id);
-    select.innerHTML = ''; // Clear previous options
+    select.innerHTML = '';
+    const selectAllOption = document.createElement('option');
+    selectAllOption.value = 'select-all';
+    selectAllOption.textContent = 'Select All';
+    selectAllOption.dataset.selectAll = true;
+    select.appendChild(selectAllOption);
+
     items.forEach(item => {
         const option = document.createElement('option');
         option.value = item;
@@ -102,7 +91,6 @@ function getSelectedValues(id) {
     const allSelected = selectedOptions.some(opt => opt.value === 'select-all');
     const values = selectedOptions.map(opt => opt.value);
 
-    // If "Select All" is selected, return all available values for that field
     if (allSelected) {
         const allOptions = Array.from(document.getElementById(id).options);
         return allOptions.filter(opt => opt.value !== 'select-all').map(opt => opt.value);
@@ -125,23 +113,3 @@ function displayFilteredData(filteredData) {
             <td>${row.territory}</td>
             <td>${row.product}</td>
             <td>${row.totalSales}</td>
-        </tr>`
-    ).join('');
-    table.innerHTML = `<thead>${headerRow}</thead><tbody>${rows}</tbody>`;
-}
-
-function aggregateData(data) {
-    const result = {};
-    data.forEach(row => {
-        const key = `${row[columnMap.territory]}|${row[columnMap.product]}`;
-        if (!result[key]) {
-            result[key] = {
-                territory: row[columnMap.territory],
-                product: row[columnMap.product],
-                totalSales: 0,
-            };
-        }
-        result[key].totalSales += parseFloat(row[columnMap.sales]) || 0;
-    });
-    return Object.values(result);
-}
