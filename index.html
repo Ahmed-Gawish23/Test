@@ -6,104 +6,6 @@
     <title>A.G Sales Filter</title>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css">
-    <style>
-        /* تنسيق الموقع العام */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            line-height: 1.6;
-            background-color: #f9f9f9;
-            color: #333;
-        }
-
-        /* تنسيق الهيدر */
-        header {
-            background: #4CAF50;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-
-        /* تنسيق المحتوى */
-        main {
-            padding: 20px;
-            max-width: 800px;
-            margin: auto;
-        }
-
-        .upload-section {
-            margin-bottom: 20px;
-        }
-
-        .filters {
-            margin-bottom: 20px;
-        }
-
-        .filters label {
-            font-weight: bold;
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .filters select {
-            width: 100%;
-            margin-bottom: 15px; /* مسافة بين القوائم */
-        }
-
-        /* عنوان الجدول */
-        #filtered-data-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-top: 20px;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-
-        /* تنسيق الجدول */
-        #filtered-data {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        #filtered-data th {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px;
-        }
-
-        #filtered-data td {
-            padding: 10px;
-            text-align: left;
-        }
-
-        /* زر الفلترة */
-        button#filter-btn {
-            display: block;
-            margin: 20px auto;
-            padding: 10px 20px;
-            font-size: 16px;
-            color: white;
-            background-color: #4CAF50;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        button#filter-btn:hover {
-            background-color: #45a049;
-        }
-
-        /* تنسيق الفوتر */
-        footer {
-            text-align: center;
-            margin-top: 20px;
-            background: #333;
-            color: white;
-            padding: 10px;
-        }
-    </style>
 </head>
 <body>
     <header>
@@ -111,18 +13,17 @@
         <p>Upload your Excel file, select your territory and product name, and view your sales data.</p>
     </header>
     <main>
-        <div class="upload-section">
+        <div class="upload-container">
             <input type="file" id="file-upload" accept=".xls, .xlsx" />
             <button id="filter-btn">Filter Data</button>
         </div>
         <div class="filters">
             <label for="territory">Select Territory:</label>
             <select id="territory" multiple></select>
-
             <label for="product">Select Product:</label>
             <select id="product" multiple></select>
         </div>
-        <div id="filtered-data-title">Filtered Data</div>
+        <h2>Filtered Data:</h2>
         <table id="filtered-data">
             <!-- Data will be dynamically inserted here -->
         </table>
