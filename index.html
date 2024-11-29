@@ -3,57 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Excel Filter</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        input[type="file"] {
-            margin-bottom: 20px;
-        }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f4f4f4;
-        }
-        .filter-container {
-            margin-bottom: 20px;
-        }
-        select {
-            padding: 5px;
-            margin-right: 10px;
-        }
-    </style>
+    <title>A.G Sales Filter</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>تصفية البيانات من ملف Excel</h1>
-    <input type="file" id="fileInput" accept=".xlsx, .xls">
-    <div class="filter-container">
-        <label for="filterColumn">اختر العمود:</label>
-        <select id="filterColumn" onchange="updateFilterValues()">
-            <option value="">اختر</option>
-        </select>
-        <label for="filterValue">اختر القيمة:</label>
-        <select id="filterValue" onchange="applyFilter()">
-            <option value="">الكل</option>
-        </select>
+    <header>
+        A.G Sales Filter
+    </header>
+    <div class="container">
+        <p>Upload your Excel file, select your territory and product name, and view your sales data.</p>
+        <input type="file" id="fileInput" />
+        <div id="filterOptions" style="margin-top: 20px;">
+            <label for="territorySelect">Select Territory:</label>
+            <input type="text" id="territorySearch" placeholder="Search Territory..." />
+            <select id="territorySelect" size="5" style="width: 100%; margin-bottom: 20px;"></select>
+
+            <label for="productSelect">Select Product:</label>
+            <input type="text" id="productSearch" placeholder="Search Product..." />
+            <select id="productSelect" size="5" style="width: 100%;"></select>
+        </div>
+        <table id="filteredTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Territory</th>
+                    <th>Product</th>
+                    <th>Sales</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
     </div>
-    <table id="dataTable">
-        <thead>
-            <tr id="tableHeader"></tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-    </table>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <footer>
+        Designed by Ahmed Gawish
+    </footer>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
