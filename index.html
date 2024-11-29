@@ -5,31 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A.G Sales Filter</title>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        header {
+            text-align: center;
+            background-color: green;
+            color: white;
+            padding: 10px;
+        }
+        footer {
+            text-align: center;
+            background-color: black;
+            color: white;
+            padding: 5px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+        #outputTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        #outputTable th, #outputTable td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
     <header>
         <h1>A.G Sales Filter</h1>
         <p>Upload your Excel file, select your territory and product name, and view your sales data.</p>
     </header>
-    <main>
-        <div class="upload-container">
-            <input type="file" id="file-upload" accept=".xls, .xlsx" />
-            <button id="filter-btn">Filter Data</button>
-        </div>
-        <div class="filters">
-            <select id="territory" multiple></select>
-            <select id="product" multiple></select>
-        </div>
-        <table id="filtered-data">
-            <!-- Data will be dynamically inserted here -->
-        </table>
-    </main>
+
+    <div>
+        <input type="file" id="fileInput" accept=".xlsx, .xls" />
+        <select id="territorySelect" class="filter-select" style="width: 200px;"></select>
+        <select id="productSelect" class="filter-select" style="width: 200px;"></select>
+        <button onclick="filterData()">Filter</button>
+    </div>
+
+    <table id="outputTable"></table>
+
     <footer>
         <p>Designed by Ahmed Gawish</p>
     </footer>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="script.js"></script>
 </body>
