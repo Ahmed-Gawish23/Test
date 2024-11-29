@@ -13,17 +13,18 @@
         <p>Upload your Excel file, select your territory and product name, and view your sales data.</p>
     </header>
     <main>
-        <div class="upload-container">
+        <div class="upload-section">
             <input type="file" id="file-upload" accept=".xls, .xlsx" />
             <button id="filter-btn">Filter Data</button>
         </div>
         <div class="filters">
             <label for="territory">Select Territory:</label>
             <select id="territory" multiple></select>
+
             <label for="product">Select Product:</label>
             <select id="product" multiple></select>
         </div>
-        <h2>Filtered Data:</h2>
+        <div id="filtered-data-title">Filtered Data</div>
         <table id="filtered-data">
             <!-- Data will be dynamically inserted here -->
         </table>
