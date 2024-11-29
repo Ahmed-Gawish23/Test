@@ -1,111 +1,135 @@
-document.getElementById('fileInput').addEventListener('change', handleFile);
+let data = [];
+let columnMap = {};
 
-const distributorConfigs = {
-    'PharmaOverseas': { territory: 'Territory Name', product: 'Product Name', sales: 'Sales' },
-    'Ibnsina': { territory: 'Territory Name', product: 'Item Name', sales: 'QTY' },
-    'ABOU KIR': { territory: 'ZONE_NAME', product: 'PRODUCT_NAME', sales: 'NET_QUANTITY' },
-};
+document.getElementById('file-upload').addEventListener('change', handleFileUpload);
 
-function handleFile(event) {
+function handleFileUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-
+    reader.onload = function (e) {
+        const workbook = XLSX.read(e.target.result, { type: 'binary' });
         const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-
-        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-        // Find the header row
-        let headerRow = rows.findIndex(row => row.some(cell => typeof cell === 'string'));
-        if (headerRow === -1) {
-            alert('No header found');
-            return;
-        }
-
-        const headers = rows[headerRow];
-        const dataRows = rows.slice(headerRow + 1);
-
-        // Identify distributor
-        const distributor = Object.keys(distributorConfigs).find(key =>
-            Object.values(distributorConfigs[key]).every(header => headers.includes(header))
-        );
-
-        if (!distributor) {
-            alert('Unknown distributor format.');
-            return;
-        }
-
-        const config = distributorConfigs[distributor];
-        const filteredData = dataRows.map(row => ({
-            territory: row[headers.indexOf(config.territory)],
-            product: row[headers.indexOf(config.product)],
-            sales: row[headers.indexOf(config.sales)],
-        })).filter(row => row.territory && row.product && row.sales);
-
-        displayFilteredData(filteredData);
+        const worksheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        handleHeader(rows);
     };
-
-    reader.readAsArrayBuffer(file);
+    reader.readAsBinaryString(file);
 }
 
-function displayFilterOptions(data) {
-    const territories = [...new Set(data.map(item => item.territory))].sort();
-    const products = [...new Set(data.map(item => item.product))].sort();
+function handleHeader(rows) {
+    const headerRowIndex = rows.findIndex(row => row.some(cell => typeof cell === 'string' && cell.toLowerCase().includes('territory')));
+    if (headerRowIndex === -1) {
+        alert('Invalid file format!');
+        return;
+    }
 
-    const territorySelect = document.getElementById('territorySelect');
-    const productSelect = document.getElementById('productSelect');
-
-    populateSelect(territorySelect, territories);
-    populateSelect(productSelect, products);
-
-    addSearchFunctionality('territorySearch', territorySelect);
-    addSearchFunctionality('productSearch', productSelect);
+    data = rows.slice(headerRowIndex + 1);
+    columnMap = detectColumns(rows[headerRowIndex]);
+    populateFilters(data, columnMap);
 }
 
-function populateSelect(selectElement, items) {
-    selectElement.innerHTML = '';
+function detectColumns(headerRow) {
+    const map = {};
+    headerRow.forEach((col, index) => {
+        if (/territory/i.test(col)) map.territory = index;
+        if (/product|item/i.test(col)) map.product = index;
+        if (/sales|qty|quantity/i.test(col)) map.sales = index;
+    });
+    return map;
+}
+
+function populateFilters(data, columns) {
+    const territories = [...new Set(data.map(row => row[columns.territory]).filter(Boolean))].sort();
+    const products = [...new Set(data.map(row => row[columns.product]).filter(Boolean))].sort();
+
+    populateDropdown('territory', territories);
+    populateDropdown('product', products);
+
+    // Initialize Select2
+    $('#territory, #product').select2({
+        placeholder: "Select an option",
+        allowClear: true,
+        width: 'resolve'
+    });
+}
+
+function populateDropdown(id, items) {
+    const select = document.getElementById(id);
+    select.innerHTML = '';
+    const selectAllOption = document.createElement('option');
+    selectAllOption.value = 'select-all';
+    selectAllOption.textContent = 'Select All';
+    selectAllOption.dataset.selectAll = true;
+    select.appendChild(selectAllOption);
+
     items.forEach(item => {
         const option = document.createElement('option');
         option.value = item;
         option.textContent = item;
-        selectElement.appendChild(option);
+        select.appendChild(option);
     });
 }
 
-function addSearchFunctionality(searchId, selectElement) {
-    const searchInput = document.getElementById(searchId);
-    searchInput.addEventListener('input', () => {
-        const filter = searchInput.value.toLowerCase();
-        Array.from(selectElement.options).forEach(option => {
-            option.style.display = option.textContent.toLowerCase().includes(filter) ? '' : 'none';
-        });
-    });
+document.getElementById('filter-btn').addEventListener('click', filterData);
+
+function filterData() {
+    const selectedTerritories = getSelectedValues('territory');
+    const selectedProducts = getSelectedValues('product');
+
+    const filtered = data.filter(row =>
+        selectedTerritories.includes(row[columnMap.territory]) &&
+        selectedProducts.includes(row[columnMap.product])
+    );
+
+    displayFilteredData(filtered);
 }
 
-function displayFilteredData(data) {
-    displayFilterOptions(data);
+function getSelectedValues(id) {
+    const selectedOptions = Array.from(document.getElementById(id).selectedOptions);
+    const allSelected = selectedOptions.some(opt => opt.value === 'select-all');
+    const values = selectedOptions.map(opt => opt.value);
 
-    const table = document.getElementById('filteredTable');
-    const tbody = table.querySelector('tbody');
-    tbody.innerHTML = '';
+    if (allSelected) {
+        const allOptions = Array.from(document.getElementById(id).options);
+        return allOptions.filter(opt => opt.value !== 'select-all').map(opt => opt.value);
+    }
 
-    const groupedData = data.reduce((acc, { territory, product, sales }) => {
-        const key = `${territory}-${product}`;
-        if (!acc[key]) acc[key] = { territory, product, sales: 0 };
-        acc[key].sales += parseInt(sales, 10);
-        return acc;
-    }, {});
+    return values;
+}
 
-    Object.values(groupedData).forEach(({ territory, product, sales }) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `<td>${territory}</td><td>${product}</td><td>${sales}</td>`;
-        tbody.appendChild(row);
+function displayFilteredData(filteredData) {
+    const table = document.getElementById('filtered-data');
+    const aggregatedData = aggregateData(filteredData);
+    const headerRow = `
+        <tr>
+            <th>Territory</th>
+            <th>Product</th>
+            <th>Total Sales</th>
+        </tr>`;
+    const rows = aggregatedData.map(row =>
+        `<tr>
+            <td>${row.territory}</td>
+            <td>${row.product}</td>
+            <td>${row.totalSales}</td>
+        </tr>`
+    ).join('');
+    table.innerHTML = `<thead>${headerRow}</thead><tbody>${rows}</tbody>`;
+}
+
+function aggregateData(data) {
+    const result = {};
+    data.forEach(row => {
+        const key = `${row[columnMap.territory]}|${row[columnMap.product]}`;
+        if (!result[key]) {
+            result[key] = {
+                territory: row[columnMap.territory],
+                product: row[columnMap.product],
+                totalSales: 0,
+            };
+        }
+        result[key].totalSales += parseFloat(row[columnMap.sales]) || 0;
     });
-
-    table.style.display = 'table';
+    return Object.values(result);
 }
