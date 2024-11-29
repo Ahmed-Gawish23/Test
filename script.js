@@ -125,5 +125,4 @@ function displayFilteredData(filteredData) {
 
 function aggregateData(data) {
     const result = {};
-    data.forEach(row => {
-        const key = `${row[columnMap.territory]}|${row[columnMap
+    data
