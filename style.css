@@ -1,25 +1,28 @@
+/* تنسيق الموقع العام */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f8f9fa;
+    line-height: 1.6;
+    background-color: #f9f9f9;
+    color: #333;
 }
 
 header {
-    background-color: #28a745; /* أخضر */
+    background: #4CAF50;
     color: white;
+    padding: 20px;
     text-align: center;
-    padding: 20px 0;
 }
 
-header h1 {
+header .site-title {
+    font-size: 24px;
     margin: 0;
-    font-size: 2rem;
 }
 
-header p {
-    margin: 10px 0 0;
-    font-size: 1rem;
+header .description {
+    font-size: 16px;
+    margin: 5px 0 0;
 }
 
 main {
@@ -28,44 +31,91 @@ main {
     margin: auto;
 }
 
-.upload-container {
-    display: flex;
-    justify-content: space-between;
+.upload-section {
     margin-bottom: 20px;
 }
 
 .filters {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
     margin-bottom: 20px;
 }
 
-#territory, #product {
-    width: 48%;
+label {
+    font-weight: bold;
+    margin-top: 10px;
+    display: block;
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
+input[type="file"] {
+    margin-top: 5px;
+}
+
+#output-section {
     margin-top: 20px;
 }
 
-table th, table td {
-    border: 1px solid #ddd;
+.footer-text {
+    text-align: center;
+    margin-top: 20px;
+    background: #333;
+    color: white;
+    padding: 10px;
+}
+
+/* تخصيص القوائم المنسدلة */
+.select2-container {
+    width: 100% !important;
+}
+
+.select2-selection {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+}
+
+.select2-selection__rendered {
+    font-size: 14px;
+    color: #555;
+    padding-left: 10px;
+}
+
+.select2-selection__arrow {
+    height: 100%;
+}
+
+/* تحسين جدول البيانات */
+#filtered-data {
+    margin-top: 20px;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#filtered-data th {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px;
+}
+
+#filtered-data td {
     padding: 10px;
     text-align: left;
 }
 
-table th {
-    background-color: #007bff;
+/* تحسين زر الفلترة */
+button#filter-btn {
+    display: block;
+    margin: 20px auto;
+    padding: 10px 20px;
+    font-size: 16px;
     color: white;
+    background-color: #4CAF50;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
 
-footer {
-    text-align: center;
-    padding: 10px;
-    background-color: #343a40; /* أسود */
-    color: white;
-    margin-top: 20px;
+button#filter-btn:hover {
+    background-color: #45a049;
 }
