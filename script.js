@@ -47,17 +47,22 @@ function populateFilters(data, columns) {
     populateDropdown('territory', territories);
     populateDropdown('product', products);
 
-    // Initialize Select2
+    // Initialize Select2 with search and multiple select enabled
     $('#territory, #product').select2({
         placeholder: "Select an option",
         allowClear: true,
-        width: '100%'
+        width: '100%',
+        multiple: true,  // Allow multiple selections
+        dropdownAutoWidth: true,  // Automatically adjust dropdown width
+        width: 'style',  // Keep the width consistent with the input field
     });
 }
 
 function populateDropdown(id, items) {
     const select = document.getElementById(id);
     select.innerHTML = '';
+    
+    // Adding the 'Select All' option
     const selectAllOption = document.createElement('option');
     selectAllOption.value = 'select-all';
     selectAllOption.textContent = 'Select All';
@@ -113,3 +118,12 @@ function displayFilteredData(filteredData) {
             <td>${row.territory}</td>
             <td>${row.product}</td>
             <td>${row.totalSales}</td>
+        </tr>`
+    ).join('');
+    table.innerHTML = `<thead>${headerRow}</thead><tbody>${rows}</tbody>`;
+}
+
+function aggregateData(data) {
+    const result = {};
+    data.forEach(row => {
+        const key = `${row[columnMap.territory]}|${row[columnMap
