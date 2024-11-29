@@ -6,6 +6,31 @@
     <title>A.G Sales Filter</title>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css">
+    <style>
+        header {
+            background-color: green;
+            color: white;
+            padding: 10px;
+        }
+        footer {
+            background-color: black;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -31,6 +56,114 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="script.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#territory').select2();
+            $('#product').select2();
+        });
+
+        let data = [];
+
+        document.getElementById('file-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const workbook = XLSX.read(event.target.result, { type: 'binary' });
+
+                workbook.SheetNames.forEach(sheetName => {
+                    const sheet = workbook.Sheets[sheetName];
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+                    
+                    // Ignore merged cells by starting from the row after the merged header
+                    let headerRowIndex = 0;
+                    if (rows[0].some(cell => cell.includes('Territory') || cell.includes('Product'))) {
+                        headerRowIndex = 1;
+                    }
+
+                    // Filter the data after the header
+                    let filteredRows = rows.slice(headerRowIndex);
+
+                    // Get distributor-specific column indices
+                    const columns = {
+                        'PharmaOverseas': { territory: 'Territory Name', product: 'Product Name', qty: 'Sales' },
+                        'Ibnsina': { territory: 'Territory Name', product: 'Item Name', qty: 'QTY' },
+                        'ABOU KIR': { territory: 'ZONE_NAME', product: 'PRODUCT_NAME', qty: 'NET_QUANTITY' }
+                    };
+
+                    const distributor = sheetName; // Assuming sheet name is the distributor
+                    const columnNames = columns[distributor];
+
+                    // Filter and aggregate the data
+                    let aggregatedData = {};
+                    filteredRows.forEach(row => {
+                        let territory = row[columnNames.territory];
+                        let product = row[columnNames.product];
+                        let qty = row[columnNames.qty];
+
+                        if (!aggregatedData[territory]) {
+                            aggregatedData[territory] = {};
+                        }
+
+                        if (!aggregatedData[territory][product]) {
+                            aggregatedData[territory][product] = 0;
+                        }
+
+                        aggregatedData[territory][product] += parseFloat(qty);
+                    });
+
+                    // Generate options for territory and product
+                    let territories = [];
+                    let products = [];
+                    for (let territory in aggregatedData) {
+                        territories.push(territory);
+                        for (let product in aggregatedData[territory]) {
+                            products.push(product);
+                        }
+                    }
+
+                    territories = [...new Set(territories)].sort();
+                    products = [...new Set(products)].sort();
+
+                    // Populate the select options
+                    territories.forEach(territory => {
+                        $('#territory').append(new Option(territory, territory));
+                    });
+
+                    products.forEach(product => {
+                        $('#product').append(new Option(product, product));
+                    });
+
+                    data = aggregatedData;
+                    displayData();
+                });
+            };
+
+            reader.readAsBinaryString(file);
+        });
+
+        function displayData() {
+            const selectedTerritories = $('#territory').val();
+            const selectedProducts = $('#product').val();
+
+            let tableHtml = '<tr><th>Territory</th><th>Product</th><th>Sales</th></tr>';
+
+            for (let territory in data) {
+                if (selectedTerritories.includes(territory) || selectedTerritories.length === 0) {
+                    for (let product in data[territory]) {
+                        if (selectedProducts.includes(product) || selectedProducts.length === 0) {
+                            tableHtml += `<tr><td>${territory}</td><td>${product}</td><td>${data[territory][product]}</td></tr>`;
+                        }
+                    }
+                }
+            }
+
+            $('#filtered-data').html(tableHtml);
+        }
+
+        $('#filter-btn').on('click', function() {
+            displayData();
+        });
+    </script>
 </body>
 </html>
