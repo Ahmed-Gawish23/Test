@@ -19,20 +19,10 @@
 
         /* تنسيق الهيدر */
         header {
-            background: #4CAF50; /* لون خلفية الهيدر */
+            background: #4CAF50;
             color: white;
             padding: 20px;
             text-align: center;
-        }
-
-        header .site-title {
-            font-size: 24px;
-            margin: 0;
-        }
-
-        header .description {
-            font-size: 16px;
-            margin: 5px 0 0;
         }
 
         /* تنسيق المحتوى */
@@ -50,55 +40,28 @@
             margin-bottom: 20px;
         }
 
-        label {
+        .filters label {
             font-weight: bold;
-            margin-top: 10px;
             display: block;
+            margin-bottom: 5px;
         }
 
-        input[type="file"] {
-            margin-top: 5px;
+        .filters select {
+            width: 100%;
+            margin-bottom: 15px; /* مسافة بين القوائم */
         }
 
-        #output-section {
+        /* عنوان الجدول */
+        #filtered-data-title {
+            font-size: 18px;
+            font-weight: bold;
             margin-top: 20px;
-        }
-
-        /* تنسيق الفوتر */
-        footer {
+            margin-bottom: 10px;
             text-align: center;
-            margin-top: 20px;
-            background: #333;
-            color: white;
-            padding: 10px;
         }
 
-        /* تخصيص القوائم المنسدلة */
-        .select2-container {
-            width: 100% !important;
-        }
-
-        .select2-selection {
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            height: 38px;
-            display: flex;
-            align-items: center;
-        }
-
-        .select2-selection__rendered {
-            font-size: 14px;
-            color: #555;
-            padding-left: 10px;
-        }
-
-        .select2-selection__arrow {
-            height: 100%;
-        }
-
-        /* تحسين جدول البيانات */
+        /* تنسيق الجدول */
         #filtered-data {
-            margin-top: 20px;
             width: 100%;
             border-collapse: collapse;
         }
@@ -114,7 +77,7 @@
             text-align: left;
         }
 
-        /* تحسين زر الفلترة */
+        /* زر الفلترة */
         button#filter-btn {
             display: block;
             margin: 20px auto;
@@ -131,6 +94,15 @@
         button#filter-btn:hover {
             background-color: #45a049;
         }
+
+        /* تنسيق الفوتر */
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            background: #333;
+            color: white;
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
@@ -144,9 +116,13 @@
             <button id="filter-btn">Filter Data</button>
         </div>
         <div class="filters">
+            <label for="territory">Select Territory:</label>
             <select id="territory" multiple></select>
+
+            <label for="product">Select Product:</label>
             <select id="product" multiple></select>
         </div>
+        <div id="filtered-data-title">Filtered Data</div>
         <table id="filtered-data">
             <!-- Data will be dynamically inserted here -->
         </table>
