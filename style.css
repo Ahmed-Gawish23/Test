@@ -1,4 +1,4 @@
-/* General Styles */
+/* تنسيق الموقع العام */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -8,6 +8,7 @@ body {
     color: #333;
 }
 
+/* تنسيق الهيدر */
 header {
     background: #4CAF50;
     color: white;
@@ -15,24 +16,14 @@ header {
     text-align: center;
 }
 
-header h1 {
-    font-size: 24px;
-    margin: 0;
-}
-
-header p {
-    font-size: 16px;
-    margin: 5px 0 0;
-}
-
+/* تنسيق المحتوى */
 main {
     padding: 20px;
     max-width: 800px;
     margin: auto;
 }
 
-.upload-container {
-    text-align: center;
+.upload-section {
     margin-bottom: 20px;
 }
 
@@ -41,23 +32,27 @@ main {
 }
 
 .filters label {
+    font-weight: bold;
     display: block;
     margin-bottom: 5px;
-    font-weight: bold;
 }
 
-#territory,
-#product {
+.filters select {
     width: 100%;
-    margin-bottom: 15px;
+    margin-bottom: 15px; /* مسافة بين القوائم */
 }
 
-h2 {
-    margin-top: 30px;
-}
-
-#filtered-data {
+/* عنوان الجدول */
+#filtered-data-title {
+    font-size: 18px;
+    font-weight: bold;
     margin-top: 20px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+/* تنسيق الجدول */
+#filtered-data {
     width: 100%;
     border-collapse: collapse;
 }
@@ -73,6 +68,7 @@ h2 {
     text-align: left;
 }
 
+/* زر الفلترة */
 button#filter-btn {
     display: block;
     margin: 20px auto;
@@ -90,32 +86,11 @@ button#filter-btn:hover {
     background-color: #45a049;
 }
 
+/* تنسيق الفوتر */
 footer {
+    text-align: center;
+    margin-top: 20px;
     background: #333;
     color: white;
-    text-align: center;
     padding: 10px;
-}
-
-/* Select2 Integration */
-.select2-container {
-    width: 100% !important;
-}
-
-.select2-selection {
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    height: 38px;
-    display: flex;
-    align-items: center;
-}
-
-.select2-selection__rendered {
-    font-size: 14px;
-    color: #555;
-    padding-left: 10px;
-}
-
-.select2-selection__arrow {
-    height: 100%;
 }
