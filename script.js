@@ -47,18 +47,34 @@ function populateFilters(data, columns) {
     populateDropdown('territory', territories);
     populateDropdown('product', products);
 
-    // Initialize Select2 with multiple selection
+    // Initialize Select2 with multiple selection and Select All option
     $('#territory, #product').select2({
         placeholder: "Select options",
         allowClear: true,
         multiple: true,
         width: 'resolve'
     });
+
+    // Add "Select All" option for both filters
+    addSelectAllOption('territory', territories);
+    addSelectAllOption('product', products);
+}
+
+function addSelectAllOption(id, items) {
+    const select = document.getElementById(id);
+    const selectAllOption = document.createElement('option');
+    selectAllOption.value = 'select-all';
+    selectAllOption.textContent = 'Select All';
+    selectAllOption.dataset.selectAll = true;
+    select.insertBefore(selectAllOption, select.firstChild);
+
+    // Refresh the Select2 dropdown to reflect changes
+    $(select).trigger('change');
 }
 
 function populateDropdown(id, items) {
     const select = document.getElementById(id);
-    select.innerHTML = '';
+    select.innerHTML = ''; // Clear previous options
     items.forEach(item => {
         const option = document.createElement('option');
         option.value = item;
@@ -83,7 +99,16 @@ function filterData() {
 
 function getSelectedValues(id) {
     const selectedOptions = Array.from(document.getElementById(id).selectedOptions);
-    return selectedOptions.map(opt => opt.value);
+    const allSelected = selectedOptions.some(opt => opt.value === 'select-all');
+    const values = selectedOptions.map(opt => opt.value);
+
+    // If "Select All" is selected, return all available values for that field
+    if (allSelected) {
+        const allOptions = Array.from(document.getElementById(id).options);
+        return allOptions.filter(opt => opt.value !== 'select-all').map(opt => opt.value);
+    }
+
+    return values;
 }
 
 function displayFilteredData(filteredData) {
