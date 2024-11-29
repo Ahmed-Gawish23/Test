@@ -6,7 +6,7 @@ body {
 }
 
 header {
-    background-color: #007bff;
+    background-color: #28a745; /* أخضر */
     color: white;
     text-align: center;
     padding: 20px 0;
@@ -65,7 +65,7 @@ table th {
 footer {
     text-align: center;
     padding: 10px;
-    background-color: #343a40;
+    background-color: #343a40; /* أسود */
     color: white;
     margin-top: 20px;
 }
