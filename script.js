@@ -1,94 +1,111 @@
-let data = [];
-let headers = [];
+document.getElementById('fileInput').addEventListener('change', handleFile);
 
-document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+const distributorConfigs = {
+    'PharmaOverseas': { territory: 'Territory Name', product: 'Product Name', sales: 'Sales' },
+    'Ibnsina': { territory: 'Territory Name', product: 'Item Name', sales: 'QTY' },
+    'ABOU KIR': { territory: 'ZONE_NAME', product: 'PRODUCT_NAME', sales: 'NET_QUANTITY' },
+};
 
-function handleFileUpload(event) {
+function handleFile(event) {
     const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const workbook = XLSX.read(e.target.result, { type: 'binary' });
-            const sheetName = workbook.SheetNames[0];
-            const sheet = workbook.Sheets[sheetName];
-            data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    if (!file) return;
 
-            // فصل العناوين عن البيانات
-            headers = data[0];
-            data = data.slice(1);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
 
-            populateTable(data);
-            populateFilterColumns();
-        };
-        reader.readAsBinaryString(file);
-    }
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+        // Find the header row
+        let headerRow = rows.findIndex(row => row.some(cell => typeof cell === 'string'));
+        if (headerRow === -1) {
+            alert('No header found');
+            return;
+        }
+
+        const headers = rows[headerRow];
+        const dataRows = rows.slice(headerRow + 1);
+
+        // Identify distributor
+        const distributor = Object.keys(distributorConfigs).find(key =>
+            Object.values(distributorConfigs[key]).every(header => headers.includes(header))
+        );
+
+        if (!distributor) {
+            alert('Unknown distributor format.');
+            return;
+        }
+
+        const config = distributorConfigs[distributor];
+        const filteredData = dataRows.map(row => ({
+            territory: row[headers.indexOf(config.territory)],
+            product: row[headers.indexOf(config.product)],
+            sales: row[headers.indexOf(config.sales)],
+        })).filter(row => row.territory && row.product && row.sales);
+
+        displayFilteredData(filteredData);
+    };
+
+    reader.readAsArrayBuffer(file);
 }
 
-function populateTable(data) {
-    const tableHeader = document.getElementById('tableHeader');
-    const tableBody = document.getElementById('tableBody');
+function displayFilterOptions(data) {
+    const territories = [...new Set(data.map(item => item.territory))].sort();
+    const products = [...new Set(data.map(item => item.product))].sort();
 
-    tableHeader.innerHTML = '';
-    tableBody.innerHTML = '';
+    const territorySelect = document.getElementById('territorySelect');
+    const productSelect = document.getElementById('productSelect');
 
-    // إنشاء العناوين
-    headers.forEach(header => {
-        const th = document.createElement('th');
-        th.textContent = header;
-        tableHeader.appendChild(th);
-    });
+    populateSelect(territorySelect, territories);
+    populateSelect(productSelect, products);
 
-    // إنشاء الصفوف
-    data.forEach(row => {
-        const tr = document.createElement('tr');
-        headers.forEach((_, index) => {
-            const td = document.createElement('td');
-            td.textContent = row[index] || '';
-            tr.appendChild(td);
-        });
-        tableBody.appendChild(tr);
-    });
+    addSearchFunctionality('territorySearch', territorySelect);
+    addSearchFunctionality('productSearch', productSelect);
 }
 
-function populateFilterColumns() {
-    const filterColumn = document.getElementById('filterColumn');
-    filterColumn.innerHTML = '<option value="">اختر</option>';
-    headers.forEach((header, index) => {
+function populateSelect(selectElement, items) {
+    selectElement.innerHTML = '';
+    items.forEach(item => {
         const option = document.createElement('option');
-        option.value = index;
-        option.textContent = header;
-        filterColumn.appendChild(option);
+        option.value = item;
+        option.textContent = item;
+        selectElement.appendChild(option);
     });
 }
 
-function updateFilterValues() {
-    const filterColumn = document.getElementById('filterColumn').value;
-    const filterValue = document.getElementById('filterValue');
-    filterValue.innerHTML = '<option value="">الكل</option>';
-
-    if (filterColumn !== '') {
-        const columnIndex = parseInt(filterColumn);
-        const uniqueValues = [...new Set(data.map(row => row[columnIndex]))];
-
-        uniqueValues.forEach(value => {
-            const option = document.createElement('option');
-            option.value = value;
-            option.textContent = value;
-            filterValue.appendChild(option);
+function addSearchFunctionality(searchId, selectElement) {
+    const searchInput = document.getElementById(searchId);
+    searchInput.addEventListener('input', () => {
+        const filter = searchInput.value.toLowerCase();
+        Array.from(selectElement.options).forEach(option => {
+            option.style.display = option.textContent.toLowerCase().includes(filter) ? '' : 'none';
         });
-    }
+    });
 }
 
-function applyFilter() {
-    const filterColumn = document.getElementById('filterColumn').value;
-    const filterValue = document.getElementById('filterValue').value;
+function displayFilteredData(data) {
+    displayFilterOptions(data);
 
-    if (filterColumn !== '') {
-        const columnIndex = parseInt(filterColumn);
-        const filteredData = filterValue === ''
-            ? data
-            : data.filter(row => row[columnIndex] === filterValue);
+    const table = document.getElementById('filteredTable');
+    const tbody = table.querySelector('tbody');
+    tbody.innerHTML = '';
 
-        populateTable(filteredData);
-    }
+    const groupedData = data.reduce((acc, { territory, product, sales }) => {
+        const key = `${territory}-${product}`;
+        if (!acc[key]) acc[key] = { territory, product, sales: 0 };
+        acc[key].sales += parseInt(sales, 10);
+        return acc;
+    }, {});
+
+    Object.values(groupedData).forEach(({ territory, product, sales }) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${territory}</td><td>${product}</td><td>${sales}</td>`;
+        tbody.appendChild(row);
+    });
+
+    table.style.display = 'table';
 }
