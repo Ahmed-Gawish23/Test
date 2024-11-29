@@ -47,10 +47,11 @@ function populateFilters(data, columns) {
     populateDropdown('territory', territories);
     populateDropdown('product', products);
 
-    // Initialize Select2
+    // Initialize Select2 with multiple selection
     $('#territory, #product').select2({
-        placeholder: "Select an option",
+        placeholder: "Select options",
         allowClear: true,
+        multiple: true,
         width: 'resolve'
     });
 }
@@ -58,12 +59,6 @@ function populateFilters(data, columns) {
 function populateDropdown(id, items) {
     const select = document.getElementById(id);
     select.innerHTML = '';
-    const selectAllOption = document.createElement('option');
-    selectAllOption.value = 'select-all';
-    selectAllOption.textContent = 'Select All';
-    selectAllOption.dataset.selectAll = true;
-    select.appendChild(selectAllOption);
-
     items.forEach(item => {
         const option = document.createElement('option');
         option.value = item;
@@ -88,15 +83,7 @@ function filterData() {
 
 function getSelectedValues(id) {
     const selectedOptions = Array.from(document.getElementById(id).selectedOptions);
-    const allSelected = selectedOptions.some(opt => opt.value === 'select-all');
-    const values = selectedOptions.map(opt => opt.value);
-
-    if (allSelected) {
-        const allOptions = Array.from(document.getElementById(id).options);
-        return allOptions.filter(opt => opt.value !== 'select-all').map(opt => opt.value);
-    }
-
-    return values;
+    return selectedOptions.map(opt => opt.value);
 }
 
 function displayFilteredData(filteredData) {
