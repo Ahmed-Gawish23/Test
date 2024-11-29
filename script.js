@@ -25,18 +25,17 @@ function handleHeader(rows) {
         return;
     }
 
-    const validRows = rows.slice(headerRowIndex).filter(row => row.some(cell => cell)); // Ignore empty rows
-    data = validRows.slice(1); // Ignore the header row itself
-    columnMap = detectColumns(validRows[0]);
+    data = rows.slice(headerRowIndex + 1);
+    columnMap = detectColumns(rows[headerRowIndex]);
     populateFilters(data, columnMap);
 }
 
 function detectColumns(headerRow) {
     const map = {};
     headerRow.forEach((col, index) => {
-        if (/territory|zone_name/i.test(col)) map.territory = index;
-        if (/product|item|product_name/i.test(col)) map.product = index;
-        if (/sales|qty|quantity|net_quantity/i.test(col)) map.sales = index;
+        if (/territory/i.test(col)) map.territory = index;
+        if (/product|item/i.test(col)) map.product = index;
+        if (/sales|qty|quantity/i.test(col)) map.sales = index;
     });
     return map;
 }
@@ -56,6 +55,7 @@ function populateFilters(data, columns) {
         width: 'resolve'
     });
 
+    // Add "Select All" option for both filters
     addSelectAllOption('territory', territories);
     addSelectAllOption('product', products);
 }
@@ -67,7 +67,22 @@ function addSelectAllOption(id, items) {
     selectAllOption.textContent = 'Select All';
     selectAllOption.dataset.selectAll = true;
     select.insertBefore(selectAllOption, select.firstChild);
+
+    // Refresh the Select2 dropdown to reflect changes
     $(select).trigger('change');
+
+    // Handle select all option
+    $(select).on('select2:select', (e) => {
+        if (e.params.data.id === 'select-all') {
+            $(select).val(items).trigger('change'); // Select all items
+        }
+    });
+
+    $(select).on('select2:unselect', (e) => {
+        if (e.params.data.id === 'select-all') {
+            $(select).val([]).trigger('change'); // Deselect all items
+        }
+    });
 }
 
 function populateDropdown(id, items) {
@@ -100,6 +115,7 @@ function getSelectedValues(id) {
     const allSelected = selectedOptions.some(opt => opt.value === 'select-all');
     const values = selectedOptions.map(opt => opt.value);
 
+    // If "Select All" is selected, return all available values for that field
     if (allSelected) {
         const allOptions = Array.from(document.getElementById(id).options);
         return allOptions.filter(opt => opt.value !== 'select-all').map(opt => opt.value);
