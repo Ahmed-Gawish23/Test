@@ -33,9 +33,9 @@ function handleHeader(rows) {
 function detectColumns(headerRow) {
     const map = {};
     headerRow.forEach((col, index) => {
-        if (/territory/i.test(col)) map.territory = index;
+        if (/territory|zone/i.test(col)) map.territory = index;
         if (/product|item/i.test(col)) map.product = index;
-        if (/sales|qty|quantity/i.test(col)) map.sales = index;
+        if (/sales|qty|quantity|net_quantity/i.test(col)) map.sales = index;
     });
     return map;
 }
