@@ -1,149 +1,103 @@
-let data = [];
-let columnMap = {};
+document.getElementById("fileInput").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
 
-document.getElementById('file-upload').addEventListener('change', handleFileUpload);
+  const data = await file.arrayBuffer();
+  const workbook = XLSX.read(data);
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-function handleFileUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+  let jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
 
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        const workbook = XLSX.read(e.target.result, { type: 'binary' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        handleHeader(rows);
-    };
-    reader.readAsBinaryString(file);
-}
+  // تحديد الصف الذي يحتوي على العناوين
+  let validRowIndex = jsonData.findIndex(row =>
+    row.includes("Territory Name") ||
+    row.includes("ZONE_NAME") ||
+    row.includes("Item Name") ||
+    row.includes("Product Name") ||
+    row.includes("PRODUCT_NAME") ||
+    row.includes("Sales") ||
+    row.includes("QTY") ||
+    row.includes("NET_QUANTITY")
+  );
 
-function handleHeader(rows) {
-    // البحث عن الصف الذي يحتوي على الأعمدة
-    const headerRowIndex = rows.findIndex(row => row.some(cell => typeof cell === 'string' && /territory|product|sales|qty|quantity|item|zone_name/i.test(cell)));
-    if (headerRowIndex === -1) {
-        alert('Invalid file format!');
-        return;
-    }
+  if (validRowIndex === -1) {
+    alert("No valid data found in the file");
+    return;
+  }
 
-    data = rows.slice(headerRowIndex + 1);  // استخراج البيانات من بعد الصف الذي يحتوي على الأعمدة
-    columnMap = detectColumns(rows[headerRowIndex]);
-    populateFilters(data, columnMap);
-}
+  jsonData = jsonData.slice(validRowIndex);
+  const headers = jsonData.shift();
 
-function detectColumns(headerRow) {
-    const map = {};
-    headerRow.forEach((col, index) => {
-        // البحث عن الأعمدة بناءً على الأسماء المتوقعة
-        if (/territory|zone_name/i.test(col)) map.territory = index;
-        if (/product|item/i.test(col)) map.product = index;
-        if (/sales|qty|quantity|net_quantity/i.test(col)) map.sales = index;
+  const validData = jsonData.map(row => {
+    const obj = {};
+    headers.forEach((header, index) => {
+      obj[header] = row[index];
     });
-    return map;
-}
+    return obj;
+  });
 
-function populateFilters(data, columns) {
-    const territories = [...new Set(data.map(row => row[columns.territory]).filter(Boolean))].sort();
-    const products = [...new Set(data.map(row => row[columns.product]).filter(Boolean))].sort();
+  let columnMapping = {};
+  const columnNames = Object.keys(validData[0]);
 
-    populateDropdown('territory', territories);
-    populateDropdown('product', products);
+  // تحديد الأعمدة بناءً على الأسماء في الأعمدة
+  if (columnNames.includes("Product Name") && columnNames.includes("Territory Name") && columnNames.includes("Sales")) {
+    columnMapping = { item: "Product Name", territory: "Territory Name", qty: "Sales" };
+  } else if (columnNames.includes("Item Name") && columnNames.includes("Territory Name") && columnNames.includes("QTY")) {
+    columnMapping = { item: "Item Name", territory: "Territory Name", qty: "QTY" };
+  } else if (columnNames.includes("PRODUCT_NAME") && columnNames.includes("ZONE_NAME") && columnNames.includes("NET_QUANTITY")) {
+    columnMapping = { item: "PRODUCT_NAME", territory: "ZONE_NAME", qty: "NET_QUANTITY" };
+  } else {
+    alert("Unknown file format");
+    return;
+  }
 
-    // Initialize Select2 with multiple selection and Select All option
-    $('#territory, #product').select2({
-        placeholder: "Select options",
-        allowClear: true,
-        multiple: true,
-        width: 'resolve'
-    });
+  const items = [...new Set(validData.map(row => row[columnMapping.item]).filter(Boolean))].sort();
+  const territories = [...new Set(validData.map(row => row[columnMapping.territory]).filter(Boolean))].sort();
 
-    // Add "Select All" option for both filters
-    addSelectAllOption('territory', territories);
-    addSelectAllOption('product', products);
-}
+  const itemSelect = document.getElementById("itemSelect");
+  const territorySelect = document.getElementById("territorySelect");
 
-function addSelectAllOption(id, items) {
-    const select = document.getElementById(id);
-    const selectAllOption = document.createElement('option');
-    selectAllOption.value = 'select-all';
-    selectAllOption.textContent = 'Select All';
-    selectAllOption.dataset.selectAll = true;
-    select.insertBefore(selectAllOption, select.firstChild);
+  // ملء الخيارات في القوائم المنسدلة
+  itemSelect.innerHTML = "";
+  territorySelect.innerHTML = "";
 
-    // Refresh the Select2 dropdown to reflect changes
-    $(select).trigger('change');
-}
+  items.forEach(item => {
+    const option = document.createElement("option");
+    option.value = item;
+    option.textContent = item;
+    itemSelect.appendChild(option);
+  });
 
-function populateDropdown(id, items) {
-    const select = document.getElementById(id);
-    select.innerHTML = ''; // Clear previous options
-    items.forEach(item => {
-        const option = document.createElement('option');
-        option.value = item;
-        option.textContent = item;
-        select.appendChild(option);
-    });
-}
+  territories.forEach(territory => {
+    const option = document.createElement("option");
+    option.value = territory;
+    option.textContent = territory;
+    territorySelect.appendChild(option);
+  });
 
-document.getElementById('filter-btn').addEventListener('click', filterData);
+  document.getElementById("filterButton").addEventListener("click", () => {
+    const selectedItems = Array.from(itemSelect.selectedOptions).map(option => option.value);
+    const selectedTerritories = Array.from(territorySelect.selectedOptions).map(option => option.value);
 
-function filterData() {
-    const selectedTerritories = getSelectedValues('territory');
-    const selectedProducts = getSelectedValues('product');
-
-    const filtered = data.filter(row =>
-        selectedTerritories.includes(row[columnMap.territory]) &&
-        selectedProducts.includes(row[columnMap.product])
+    // تصفية البيانات حسب المناطق والمنتجات المحددة
+    const filteredData = validData.filter(row =>
+      selectedItems.includes(row[columnMapping.item]) &&
+      selectedTerritories.includes(row[columnMapping.territory])
     );
 
-    displayFilteredData(filtered);
-}
-
-function getSelectedValues(id) {
-    const selectedOptions = Array.from(document.getElementById(id).selectedOptions);
-    const allSelected = selectedOptions.some(opt => opt.value === 'select-all');
-    const values = selectedOptions.map(opt => opt.value);
-
-    // If "Select All" is selected, return all available values for that field
-    if (allSelected) {
-        const allOptions = Array.from(document.getElementById(id).options);
-        return allOptions.filter(opt => opt.value !== 'select-all').map(opt => opt.value);
-    }
-
-    return values;
-}
-
-function displayFilteredData(filteredData) {
-    const table = document.getElementById('filtered-data');
-    const aggregatedData = aggregateData(filteredData);
-    const headerRow = `
-        <tr>
-            <th>Territory</th>
-            <th>Product</th>
-            <th>Total Sales</th>
-        </tr>`;
-    const rows = aggregatedData.map(row =>
-        `<tr>
-            <td>${row.territory}</td>
-            <td>${row.product}</td>
-            <td>${row.totalSales}</td>
-        </tr>`
-    ).join('');
-    table.innerHTML = `<thead>${headerRow}</thead><tbody>${rows}</tbody>`;
-}
-
-function aggregateData(data) {
     const result = {};
-    data.forEach(row => {
-        const key = `${row[columnMap.territory]}|${row[columnMap.product]}`;
-        if (!result[key]) {
-            result[key] = {
-                territory: row[columnMap.territory],
-                product: row[columnMap.product],
-                totalSales: 0,
-            };
-        }
-        result[key].totalSales += parseFloat(row[columnMap.sales]) || 0;
+    filteredData.forEach(row => {
+      const key = `${row[columnMapping.item]} - ${row[columnMapping.territory]}`;
+      if (!result[key]) result[key] = 0;
+      result[key] += row[columnMapping.qty];
     });
-    return Object.values(result);
-}
+
+    const output = document.getElementById("output");
+    output.innerHTML = "<h3>Filtered Results:</h3>";
+    Object.entries(result).forEach(([key, qty]) => {
+      const p = document.createElement("p");
+      p.textContent = `${key}: ${qty} boxes`;
+      output.appendChild(p);
+    });
+  });
+});
