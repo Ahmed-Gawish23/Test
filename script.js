@@ -19,14 +19,13 @@ function handleFileUpload(event) {
 }
 
 function handleHeader(rows) {
-    // البحث عن الصف الذي يحتوي على أسماء الأعمدة
-    const headerRowIndex = rows.findIndex(row => row.some(cell => typeof cell === 'string' && /territory|product|sales/i.test(cell)));
+    const headerRowIndex = rows.findIndex(row => row.some(cell => typeof cell === 'string' && cell.toLowerCase().includes('territory')));
     if (headerRowIndex === -1) {
         alert('Invalid file format!');
         return;
     }
 
-    data = rows.slice(headerRowIndex + 1);  // استخراج البيانات من بعد الصف الذي يحتوي على الأعمدة
+    data = rows.slice(headerRowIndex + 1);
     columnMap = detectColumns(rows[headerRowIndex]);
     populateFilters(data, columnMap);
 }
