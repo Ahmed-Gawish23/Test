@@ -19,13 +19,14 @@ function handleFileUpload(event) {
 }
 
 function handleHeader(rows) {
-    const headerRowIndex = rows.findIndex(row => row.some(cell => typeof cell === 'string' && cell.toLowerCase().includes('territory')));
+    // البحث عن الصف الذي يحتوي على الأعمدة
+    const headerRowIndex = rows.findIndex(row => row.some(cell => typeof cell === 'string' && /territory|product|sales|qty|quantity|item|zone_name/i.test(cell)));
     if (headerRowIndex === -1) {
         alert('Invalid file format!');
         return;
     }
 
-    data = rows.slice(headerRowIndex + 1);
+    data = rows.slice(headerRowIndex + 1);  // استخراج البيانات من بعد الصف الذي يحتوي على الأعمدة
     columnMap = detectColumns(rows[headerRowIndex]);
     populateFilters(data, columnMap);
 }
@@ -33,9 +34,10 @@ function handleHeader(rows) {
 function detectColumns(headerRow) {
     const map = {};
     headerRow.forEach((col, index) => {
-        if (/territory/i.test(col)) map.territory = index;
+        // البحث عن الأعمدة بناءً على الأسماء المتوقعة
+        if (/territory|zone_name/i.test(col)) map.territory = index;
         if (/product|item/i.test(col)) map.product = index;
-        if (/sales|qty|quantity/i.test(col)) map.sales = index;
+        if (/sales|qty|quantity|net_quantity/i.test(col)) map.sales = index;
     });
     return map;
 }
