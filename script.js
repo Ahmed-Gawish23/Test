@@ -1,6 +1,5 @@
 let data = [];
 let columnMap = {};
-let distributorName = "";  // لتخزين اسم الموزع
 
 document.getElementById('file-upload').addEventListener('change', handleFileUpload);
 
@@ -14,64 +13,31 @@ function handleFileUpload(event) {
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        
-        distributorName = sheetName; // تحديد اسم الموزع بناءً على اسم الشيت
         handleHeader(rows);
     };
     reader.readAsBinaryString(file);
 }
 
 function handleHeader(rows) {
-    const headerRowIndex = rows.findIndex(row => row.some(cell => typeof cell === 'string' && cell.toLowerCase().includes('territory')));
+    // البحث عن الصف الذي يحتوي على أسماء الأعمدة
+    const headerRowIndex = rows.findIndex(row => row.some(cell => typeof cell === 'string' && /territory|product|sales/i.test(cell)));
     if (headerRowIndex === -1) {
         alert('Invalid file format!');
         return;
     }
 
-    data = rows.slice(headerRowIndex + 1);
+    data = rows.slice(headerRowIndex + 1);  // استخراج البيانات من بعد الصف الذي يحتوي على الأعمدة
     columnMap = detectColumns(rows[headerRowIndex]);
     populateFilters(data, columnMap);
 }
 
 function detectColumns(headerRow) {
     const map = {};
-
-    // التحديد بناءً على اسم الموزع
-    switch (distributorName) {
-        case "PharmaOverseas":
-            headerRow.forEach((col, index) => {
-                if (/territory/i.test(col)) map.territory = index;
-                if (/product/i.test(col)) map.product = index;
-                if (/sales/i.test(col)) map.sales = index;
-            });
-            break;
-
-        case "Ibnsina":
-            headerRow.forEach((col, index) => {
-                if (/territory/i.test(col)) map.territory = index;
-                if (/item/i.test(col)) map.product = index;
-                if (/qty/i.test(col)) map.sales = index;
-            });
-            break;
-
-        case "ABOU KIR":
-            headerRow.forEach((col, index) => {
-                if (/zone_name/i.test(col)) map.territory = index;
-                if (/product_name/i.test(col)) map.product = index;
-                if (/net_quantity/i.test(col)) map.sales = index;
-            });
-            break;
-
-        default:
-            alert('Invalid distributor name!');
-            return;
-    }
-
-    // إذا لم يتم العثور على الأعمدة المطلوبة
-    if (!map.territory || !map.product || !map.sales) {
-        alert('Invalid file format! One or more required columns are missing.');
-    }
-
+    headerRow.forEach((col, index) => {
+        if (/territory/i.test(col)) map.territory = index;
+        if (/product|item/i.test(col)) map.product = index;
+        if (/sales|qty|quantity/i.test(col)) map.sales = index;
+    });
     return map;
 }
 
