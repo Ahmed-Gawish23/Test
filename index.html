@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A.G Sales Filter</title>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css">
     <style>
-        /* تنسيق الموقع العام */
+        /* تنسيق الصفحة */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -17,7 +16,6 @@
             color: #333;
         }
 
-        /* تنسيق الهيدر */
         header {
             background: #4CAF50;
             color: white;
@@ -25,62 +23,22 @@
             text-align: center;
         }
 
-        /* تنسيق المحتوى */
         main {
             padding: 20px;
             max-width: 800px;
             margin: auto;
         }
 
-        .upload-section {
-            margin-bottom: 20px;
-        }
-
-        .filters {
-            margin-bottom: 20px;
-        }
-
-        .filters label {
+        label {
             font-weight: bold;
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .filters select {
-            width: 100%;
-            margin-bottom: 15px; /* مسافة بين القوائم */
-        }
-
-        /* عنوان الجدول */
-        #filtered-data-title {
             font-size: 18px;
-            font-weight: bold;
-            margin-top: 20px;
             margin-bottom: 10px;
-            text-align: center;
+            display: block;
         }
 
-        /* تنسيق الجدول */
-        #filtered-data {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        #filtered-data th {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px;
-        }
-
-        #filtered-data td {
-            padding: 10px;
-            text-align: left;
-        }
-
-        /* زر الفلترة */
         button#filter-btn {
             display: block;
-            margin: 20px auto;
+            margin: 20px auto 0;
             padding: 10px 20px;
             font-size: 16px;
             color: white;
@@ -95,13 +53,40 @@
             background-color: #45a049;
         }
 
-        /* تنسيق الفوتر */
         footer {
-            text-align: center;
-            margin-top: 20px;
-            background: #333;
+            background: #000;
             color: white;
             padding: 10px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        /* تنسيق الجدول */
+        #filtered-data {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        #filtered-data th {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        #filtered-data td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        #filtered-data tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        #filtered-data tr:hover {
+            background-color: #ddd;
         }
     </style>
 </head>
@@ -111,20 +96,19 @@
         <p>Upload your Excel file, select your territory and product name, and view your sales data.</p>
     </header>
     <main>
-        <div class="upload-section">
+        <div>
             <input type="file" id="file-upload" accept=".xls, .xlsx" />
-            <button id="filter-btn">Filter Data</button>
         </div>
-        <div class="filters">
+        <div>
             <label for="territory">Select Territory:</label>
             <select id="territory" multiple></select>
-
             <label for="product">Select Product:</label>
             <select id="product" multiple></select>
         </div>
+        <button id="filter-btn">Filter Data</button>
         <div id="filtered-data-title">Filtered Data</div>
         <table id="filtered-data">
-            <!-- Data will be dynamically inserted here -->
+            <!-- سيتم إضافة البيانات هنا -->
         </table>
     </main>
     <footer>
@@ -145,29 +129,27 @@
                     const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
                     let jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-                    console.log("Raw sheet data:", jsonData);
-
                     let validRowIndex = jsonData.findIndex(row =>
                         row.includes("Territory Name") ||
                         row.includes("ZONE_NAME") ||
+                        row.includes("Branch Name") ||
                         row.includes("Item Name") ||
                         row.includes("Product Name") ||
                         row.includes("PRODUCT_NAME") ||
+                        row.includes("Item name") ||
                         row.includes("Sales") ||
                         row.includes("QTY") ||
+                        row.includes("Sales Quantity") ||
                         row.includes("NET_QUANTITY")
                     );
 
                     if (validRowIndex === -1) {
                         alert("No valid data found in the file");
-                        console.error("No valid data found");
                         return;
                     }
 
                     jsonData = jsonData.slice(validRowIndex);
                     const headers = jsonData.shift();
-                    console.log("Headers:", headers);
-
                     const validData = jsonData.map(row => {
                         const obj = {};
                         headers.forEach((header, index) => {
@@ -176,33 +158,32 @@
                         return obj;
                     });
 
-                    console.log("Valid Data:", validData);
-
                     let columnMapping = {};
                     const columnNames = Object.keys(validData[0]);
 
-                    // تحديد الأعمدة بناءً على الأسماء في الأعمدة
+                    // التحقق من أسماء الأعمدة وتحديد الأعمدة الرئيسية
                     if (columnNames.includes("Product Name") && columnNames.includes("Territory Name") && columnNames.includes("Sales")) {
                         columnMapping = { item: "Product Name", territory: "Territory Name", qty: "Sales" };
                     } else if (columnNames.includes("Item Name") && columnNames.includes("Territory Name") && columnNames.includes("QTY")) {
                         columnMapping = { item: "Item Name", territory: "Territory Name", qty: "QTY" };
                     } else if (columnNames.includes("PRODUCT_NAME") && columnNames.includes("ZONE_NAME") && columnNames.includes("NET_QUANTITY")) {
                         columnMapping = { item: "PRODUCT_NAME", territory: "ZONE_NAME", qty: "NET_QUANTITY" };
+                    } else if (columnNames.includes("Item name") && columnNames.includes("Branch Name") && columnNames.includes("Sales Quantity")) {
+                        columnMapping = { item: "Item name", territory: "Branch Name", qty: "Sales Quantity" };
                     } else {
                         alert("Unknown file format");
-                        console.error("Unknown file format");
                         return;
                     }
 
+                    // استخراج العناصر والمناطق
                     const items = [...new Set(validData.map(row => row[columnMapping.item]).filter(Boolean))].sort();
                     const territories = [...new Set(validData.map(row => row[columnMapping.territory]).filter(Boolean))].sort();
 
                     const itemSelect = document.getElementById("product");
                     const territorySelect = document.getElementById("territory");
 
-                    // ملء الخيارات في القوائم المنسدلة
-                    itemSelect.innerHTML = "";
-                    territorySelect.innerHTML = "";
+                    itemSelect.innerHTML = "<option value='all'>Select All</option>";
+                    territorySelect.innerHTML = "<option value='all'>Select All</option>";
 
                     items.forEach(item => {
                         const option = document.createElement("option");
@@ -218,43 +199,47 @@
                         territorySelect.appendChild(option);
                     });
 
-                    // تفعيل select2 لزيادة تحسين تجربة الاختيار
-                    $('#territory').select2();
-                    $('#product').select2();
+                    $('#territory, #product').select2();
 
                     document.getElementById("filter-btn").addEventListener("click", () => {
-                        const selectedItems = Array.from(itemSelect.selectedOptions).map(option => option.value);
-                        const selectedTerritories = Array.from(territorySelect.selectedOptions).map(option => option.value);
+                        const selectedItems = $('#product').val();
+                        const selectedTerritories = $('#territory').val();
 
-                        // تصفية البيانات حسب المناطق والمنتجات المحددة
                         const filteredData = validData.filter(row =>
-                            selectedItems.includes(row[columnMapping.item]) &&
-                            selectedTerritories.includes(row[columnMapping.territory])
+                            (selectedItems.includes("all") || selectedItems.includes(row[columnMapping.item])) &&
+                            (selectedTerritories.includes("all") || selectedTerritories.includes(row[columnMapping.territory]))
                         );
 
-                        const result = {};
+                        const aggregatedData = {};
                         filteredData.forEach(row => {
-                            const key = `${row[columnMapping.item]} - ${row[columnMapping.territory]}`;
-                            if (!result[key]) result[key] = 0;
-                            result[key] += row[columnMapping.qty];
+                            const key = `${row[columnMapping.territory]} - ${row[columnMapping.item]}`;
+                            if (!aggregatedData[key]) {
+                                aggregatedData[key] = { territory: row[columnMapping.territory], product: row[columnMapping.item], qty: 0 };
+                            }
+                            aggregatedData[key].qty += parseInt(row[columnMapping.qty], 10) || 0;
                         });
 
                         const output = document.getElementById("filtered-data");
-                        output.innerHTML = "<h3>Filtered Results:</h3>";
-                        Object.entries(result).forEach(([key, qty]) => {
+                        output.innerHTML = `
+                            <tr>
+                                <th>Territory</th>
+                                <th>Product</th>
+                                <th>Sales</th>
+                            </tr>
+                        `;
+
+                        Object.values(aggregatedData).forEach(({ territory, product, qty }) => {
                             const tr = document.createElement("tr");
-                            const tdKey = document.createElement("td");
-                            tdKey.textContent = key;
-                            const tdQty = document.createElement("td");
-                            tdQty.textContent = qty;
-                            tr.appendChild(tdKey);
-                            tr.appendChild(tdQty);
+                            tr.innerHTML = `
+                                <td>${territory}</td>
+                                <td>${product}</td>
+                                <td>${qty}</td>
+                            `;
                             output.appendChild(tr);
                         });
                     });
                 } catch (error) {
                     alert("An error occurred while processing the file.");
-                    console.error("Error processing file:", error);
                 }
             });
         });
