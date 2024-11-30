@@ -37,6 +37,12 @@ function detectColumns(headerRow) {
         if (/product|item/i.test(col)) map.product = index;
         if (/sales|qty|quantity|net_quantity/i.test(col)) map.sales = index;
     });
+
+    // إذا لم يتم العثور على الأعمدة المطلوبة، نعرض رسالة "Invalid file format"
+    if (!map.territory || !map.product || !map.sales) {
+        alert('Invalid file format! One or more required columns are missing.');
+    }
+
     return map;
 }
 
