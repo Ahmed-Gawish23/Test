@@ -110,4 +110,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     const tr = document.createElement("tr");
                     tr.innerHTML = `
                         <td>${territory}</td>
-                        <td>${
+                        <td>${product}</td>
+                        <td>${qty}</td>
+                    `;
+                    output.appendChild(tr);
+                });
+            });
+        } catch (err) {
+            console.error(err);
+            alert("Error reading file.");
+        }
+    });
+});
